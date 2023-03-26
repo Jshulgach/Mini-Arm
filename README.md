@@ -1,6 +1,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ## Mini-Arm
-![](https://github.com/Jshulgach/Desktop-Arm/blob/master/doc/robotic-arm-3d-model-2023.PNG)
+![](https://github.com/Jshulgach/Mini-Arm/blob/main/doc/robotic-arm-3d-model-2023.png)
 
 The Mini Arm is a miniature version of the [Desktop-Arm](https://github.com/Jshulgach/Desktop-Arm) project, a portable 6DOF 3D-printed robot arm with open-source models and code.
 
@@ -31,8 +31,8 @@ Table of Contents
    + Files for 3D printing can be found on [HowToMechatronics](https://thangs.com/designer/HowToMechatronics/3d-model/Robotic%20Arm%203D%20Model-38899) and some [assembly instructions](https://howtomechatronics.com/tutorials/arduino/diy-arduino-robot-arm-with-smartphone-control/)
 
 2. Electrical wiring
-   + Use the wiring diagram below 
-   ![](https://github.com/Jshulgach/Desktop-Arm/blob/master/doc/wiring.PNG)
+
+   ![alt](https://github.com/Jshulgach/Mini-Arm/blob/main/doc/wiring.PNG)
 ---
 
 ### Raspberry Pico W Software Installation:

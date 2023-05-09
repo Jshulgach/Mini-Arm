@@ -2,13 +2,11 @@
 ## Mini-Arm
 ![](https://github.com/Jshulgach/Mini-Arm/blob/main/doc/robotic-arm-3d-model-2023.png)
 
-The Mini Arm is a miniature version of the [Desktop-Arm](https://github.com/Jshulgach/Desktop-Arm) project, a portable 6DOF 3D-printed robot arm with open-source models and code.
-
-While this little machine can run on a 5V 2A DC adapter, it has other cool features:
+The Mini Arm is a miniature version of the [Desktop-Arm](https://github.com/Jshulgach/Desktop-Arm) project with IK solver inspirations from [Alberto Abarzua](https://github.com/alberto-abarzua/3d_printed_robot_arm) and [Mithi Sevilla](https://github.com/mithi/arm-ik), a portable 6DOF 3D-printed robot arm with open-source models and code. While this little machine can run on a 5V 2A DC adapter, it has other cool features:
 
 + Runs CircuitPython on a Raspberry Pico W (wifi operated)
 + All 3D printable components (aside from nuts & bolts)
-+ Total cost of hardware less than $50!
++ Total cost of hardware less than $50
 + Weighs less than 1lb (0.3kg to be exact)
 + Capacity to integrate more features
 
@@ -61,6 +59,12 @@ Sending commands to the TCP server on the robot only requires an encoded string.
 |       movemotor          |        MOTOR       VALUE                 | Moves motor number MOTOR to absolute position VALUE (deg)           |
 |       movemotors         |        [VAL1,VAL2,VAL3,VAL4,VAL5,VAL6]   | An array containing values for each motor. Moves all the motors at once to the values included in the array from base-to-gripper                                  |
 |       play               |        SONGNAME                          | Plays a tune from the selected SONGNAME if in the library           |
+|       pose               |        [X, Y, Z, ROLL, PITCH, YAW]       | Moves the end effector to an absolute coordinate pose frame with respect to the world frame. It is helpful to know where the robot EE frame is.                   |
+|       delta              |        [X, Y, Z, ROLL, PITCH, YAW]       | Displaces the end effector from its current pose given the displacement values                                                                                    |
+|       robotinfo          |        none                              | Gives back information about the robot's current pose and joint state                                                                                             |
+|       gripper            |        VALUE                             | Moves the gripper based on the input received                       |
+|       debugon            |        none                              | Enables verbose feedback outputs for debugging                      |
+|       debugoff           |        none                              | Disables verbose feedback outputs for debugging                     |
 
 --- 
 

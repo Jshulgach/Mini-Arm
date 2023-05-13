@@ -36,8 +36,8 @@ from arm_control.async_controller import AsyncController as MiniArmController
 def main():
     try:
         robot_controller = MiniArmController(port=1000,
-                                             simulate_hardware=True,
-                                             offline=True,
+                                             simulate_hardware=False,
+                                             offline=False,
                                              verbose=False
                            )
         robot_controller.start()   

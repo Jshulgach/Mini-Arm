@@ -13,13 +13,14 @@
       
 """
 
-import asyncio
-import wifi
 import os
+import wifi
 import time
-from arm_control.robotarm import RobotArm
+import asyncio
 from rgbled import RGBLED
 from musicplayer import MusicPlayer
+from arm_utils.xbox_utils import *
+from arm_control.robotarm import RobotArm
 
 __author__ = "Jonathan Shulgach"
 __version__ = "0.5.9"
@@ -30,7 +31,7 @@ ARGUMENT_DELIMITER = " " # expecting arguemnst to be spaced
 QUEUE_BUFFER = 100       # Maximum number of commands to hold
 
 class AsyncController:
-    def __init__(self, name='Control', ip=None, port=1000, rate=10, simulate=False, offline=False, verbose=False):
+    def __init__(self, name='Control', ip=None, port=1000, rate=40, simulate_hardware=False, offline=False, verbose=False):
         """This is the object that handles serial command inputs and directs the servo positions
         according to the commands given.
 
@@ -57,16 +58,18 @@ class AsyncController:
         self.prev_t = 0
         
         # Create robot
-        self.robot = RobotArm(simulate=simulate, verbose=self.verbose)
-        
-        self.robot.a1z = 650 # settings for Alberto arm, change to miniarm when ready
-        self.robot.a2x = 400
-        self.robot.a2z = 680
-        self.robot.a3z = 1100
-        self.robot.a4z = 230
-        self.robot.a4x = 766
-        self.robot.a5x = 345
-        self.robot.a6x = 244
+        self.robot = RobotArm(simulate_hardware=simulate_hardware, verbose=self.verbose) 
+
+        # Set the transform matrix linkage dimensions in terms of x,y,z in mm        
+        self.robot.a1z = 50 
+        self.robot.a2x = 0 
+        self.robot.a2z = 40 
+        self.robot.ax2 = 10 
+        self.robot.a3z = 120 
+        self.robot.a4z = 0 
+        self.robot.a4x = 90 
+        self.robot.a5x = 30 
+        self.robot.a6x = 50 
         self.robot.direct_kinematics()  # update self.config with new values.
         
         self.rgb = RGBLED(set_color=[30, 0, 0])
@@ -76,10 +79,6 @@ class AsyncController:
         
         # Display current robot state
         self.robot.robotinfo()
-
-        # New test with controller input]
-        #test_input = ', '.join([str(0.00) for i in range(0,20)])
-        #self.robot.handle_controller_input(test_input)
         
 
     def logger(self, *argv):
@@ -90,6 +89,25 @@ class AsyncController:
         """Makes a call to the asyncronous library to run a main routing. Dpeendent on network connection
         """
         asyncio.run(self.main()) # Need to pass the async function into the run method to start
+
+    async def main(self):
+        """ Keeping the main tasks and coroutines in a single main function """
+        
+        # Set up all coroutines here, like launching new threads
+        if not self.offline:
+            self.logger("Setting up webserver on ( ip: '{}', Port: {} ) ...".format(str(wifi.radio.ipv4_address), self.port))
+            asyncio.create_task(asyncio.start_server(self.serve_client, str(wifi.radio.ipv4_address), self.port))
+
+        self.logger("Setting up robot update rate")
+        asyncio.create_task( self.update( self.rate ) ) 
+        
+        # Any others?
+        # maybe a new task that actually updates the servos to fix the jumpiness?
+
+        self.logger("{} running!".format(self.name))
+        while self.all_stop != True:
+            await asyncio.sleep(0) # Calling #async with sleep for 0 seconds allows coroutines to run
+
 
     def stop(self):
         """Sets a flag to stop running all tasks
@@ -120,10 +138,12 @@ class AsyncController:
         """
         commands = msg.split(COMMAND_DELIMITER) 
         for command in commands:
-            cmd = command.split(ARGUMENT_DELIMITER) # Each command will have arguments separated by 
-            if self.verbose: self.logger("Adding {} to queue:".format(cmd))
             if len(self.queue) <= QUEUE_BUFFER:
-                self.queue.append(cmd)
+                if command != '':
+                    #print("command received: '{}'".format(command))
+                    cmd = command.split(ARGUMENT_DELIMITER) # Each command will have arguments separated by             
+                    if self.verbose: self.logger("Adding {} to queue:".format(cmd))
+                    self.queue.append(cmd)
             else:
                 self.logger("Max queue buffer reached")
 
@@ -136,7 +156,7 @@ class AsyncController:
         while True:
             request = await reader.read(MAXBUF)
             request = ''.join([chr(b) for b in request]).replace('\x00','')
-            if request == '': break            
+            if request == '': break
             await self.queue_msg(request)
         self.logger("Client disconnected")
         self.rgb.set_color([0, 100, 0])
@@ -159,18 +179,18 @@ class AsyncController:
                 await self.parse_command(msg)
                 
             if self.verbose: self.logger("Queued messages: {}".format(self.queue))
-            #await asyncio.sleep(1 / int(interval))  # Don't forget the await!     
+            await asyncio.sleep(1 / int(interval))  # Don't forget the await!     
 
             # ========== temporary testing ===========
             #self.robot.helper_direct_kinematics([0, 0, 0, 0, 0, 0], [1755, 0, 2660], [0, 0, 0])
             #self.robot.helper_inverse_kinematics([], [1755, 0, 2660 + self.counter], [0, 0, 0])
-            #await self.queue_msg('pose 1755,0,' + str(2660 + self.counter)+',0,0,0')
+            #await self.queue_msg('pose ' + str(1755 + self.counter) + ',0,2660,0,0,0')
             
-            await self.queue_msg('delta 0,0,-1,0,0,0')
-            self.counter -= 1            
-            self.logger("{:.2}".format(1/(time.monotonic()-self.prev_t)))
-            self.prev_t = time.monotonic()
-            await asyncio.sleep(0)            
+            #await self.queue_msg('delta 0,0,-1,0,0,0')
+            #self.counter -= 1            
+            #self.logger("{:.2}".format(1/(time.monotonic()-self.prev_t)))
+            #self.prev_t = time.monotonic()
+            #await asyncio.sleep(0)            
             
             # ========================================
 
@@ -213,6 +233,13 @@ class AsyncController:
             # Relative cartesian position (in the form of [x, y, z, roll, pitch, yaw])
             # =====================================================================================
             await self.set_delta(msg)
+            
+        elif cmd == 'controller':
+            # =====================================================================================
+            # Controller command received with an array of controller input values
+            # =====================================================================================
+            await self.set_controller_delta(msg)
+            
         
         elif cmd == 'play':
             # =====================================================================================
@@ -220,22 +247,8 @@ class AsyncController:
             # =====================================================================================
             await self.play_file(msg)
 
-        elif cmd == 'debugon':
-            # =====================================================================================
-            # Enable verbose output
-            # =====================================================================================
-            self.verbose = True    
-            self.robot.verbose = self.verbose            
-
-        elif cmd == 'debugoff':
-            # =====================================================================================
-            # Disable verbose output
-            # =====================================================================================
-            self.verbose = False    
-            self.robot.verbose = self.verbose            
-
         else:
-            self.logger('Unknown command received: {}'.format(cmd))
+            self.logger("Unknown command received: '{}'".format(cmd))
 
     async def movemotor(self, cmd):
         """ Function that handles a command that updates a specified robot motor to an angle
@@ -283,7 +296,7 @@ class AsyncController:
         else:
             pose_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",")            
             self.robot.set_pose(pose_str)
-            if self.verbose: self.logger("New robot angles: {}".format([angle.deg for angle in self.robot.angles]))
+            if self.verbose: self.logger("Servos: {}".format([angle.deg for angle in self.robot.angles]))
 
     async def set_delta(self, cmd):
         """ Function that handles a command that updates the end effector pose with a delta movement
@@ -294,9 +307,22 @@ class AsyncController:
             self.logger("No position data received. Expected '[x, y, z]' or '[x, y, z, roll, pitch, yaw]'")
         else:
             pose_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",")    
-            new_vals = self.robot.handle_delta(pose_str)
-            self.robot.set_pose(new_vals)
-            if self.verbose: self.logger("New robot angles: {}".format([angle.deg for angle in self.robot.angles]))
+            self.robot.set_pose(self.robot.handle_delta(pose_str))
+            if self.verbose: self.logger("Servos: {}".format([angle.deg + self.robot.joint_offsets[i] for i, angle in enumerate(self.robot.angles)]))
+
+    async def set_controller_delta(self, cmd):
+        """ Function that handles a controller command by converting it into a delta position, 
+            followed by updating the end effector pose with that delta movement
+        
+        :param cmd: (list) Command message as a list containing the main command and arguments 
+        """
+        if len(cmd) < 2:
+            self.logger("Received 'controller' command but missing controller data...")
+        else:    
+            new_delta_pos = convertControllerToDelta(cmd[1])
+            self.logger("New delta pose: {}".format(new_delta_pos))
+            self.robot.set_pose(self.robot.handle_delta(new_delta_pos))
+            if self.verbose: self.logger("Servos: {}".format([angle.deg + self.robot.joint_offsets[i] for i, angle in enumerate(self.robot.angles)]))
 
     async def play_file(self, cmd):
         """ Function that handles a command to play file. Checks that the file exists before playing
@@ -311,23 +337,3 @@ class AsyncController:
             else:
                 self.player.play(cmd[1])    
     
-    async def main(self):
-        """ Keeping the main tasks and coroutines in a single main function """
-        
-        # ===== Set up all coroutings here, similar to launching new threads in a main loop ====
-        if not self.offline:
-            self.logger('Setting up webserver...')
-            asyncio.create_task(asyncio.start_server(self.serve_client, str(wifi.radio.ipv4_address), self.port))
-
-        self.logger("Setting up robot update rate")
-        asyncio.create_task( self.update( self.rate ) ) 
-        
-        # Any others?
-        # maybe a new task that actually updates the servos!
-        # ======================================================================================
-
-
-        self.logger("{} running!".format(self.name))
-        while self.all_stop != True:
-            await asyncio.sleep(0) # Calling #async with sleep for 0 seconds allows coroutines to run
-

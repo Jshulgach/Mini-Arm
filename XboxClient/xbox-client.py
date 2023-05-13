@@ -33,9 +33,9 @@ class RepeatedTimer(object):
 
 class XboxClient():
     def __init__(self,
-                 ip='192.168.1.165', # 'desktoparm.ddns.net',
+                 ip='192.168.1.165', # for the dedicated dns once it goes back up: 'desktoparm.ddns.net'
                  port=1000,
-                 rate=20,
+                 rate=10,
                  verbose=True,
                  ):
         """
@@ -86,7 +86,6 @@ class XboxClient():
             data = self.xbox.read()
             message = ",".join([str(elem) for elem in data])
             message = "controller " + message + MESSAGE_TERMINATOR # adding the keyword for the controller command parser, and terminator
-            #message = "hello world"
             try:
                 self.sock.send(message.encode())
                 if self.verbose: print('[{}] Sent messgage: {!r}'.format(self.counter, message))
@@ -104,7 +103,7 @@ class XboxClient():
                 #self.connect(self.ip, self.port)
     
 
-    def connect(self, ip='192.168.1.180', port=10000):
+    def connect(self, ip, port):
         """ Function that makes an attempt to connect the socket to the port where the server
         is listening. If successful, it starts the timer object to send data to IP address at specified rate
 
@@ -147,7 +146,10 @@ class XboxClient():
 
 
 if __name__ == '__main__':
-    xbox = XboxClient(ip='192.168.1.165',port=1000, rate=10)
+
+    # Specify the ip address to connect to
+    ip = '192.168.1.165' 
+    xbox = XboxClient(ip=ip, port=1000, rate=10)
     try:
         while True:
             pass

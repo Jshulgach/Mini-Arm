@@ -83,7 +83,7 @@ def convertJoyToCartesianDelta(msg):
             zdelta = STEP_SIZE*thresholdEval(msg.buttons[XINPUT_CODE_MAP['BTN_TR']])
 
         roll = 0.00 #thresholdEval(msg.axes[XINPUT_CODE_MAP['ABS_RX']])
-        pitch = 0.00 #thresholdEval(msg.axes[XINPUT_CODE_MAP['ABS_RY']])
+        pitch = -10*STEP_SIZE*thresholdEval(msg.axes[XINPUT_CODE_MAP['ABS_RY']])
         yaw = 0.00 # for now keep this at 0
 
         new_pose_list = [xdelta, ydelta, zdelta, roll, pitch, yaw]

@@ -2,8 +2,19 @@ import socket
 import sys
 from threading import Timer
 from xbox_control import XboxController
+import numpy as np
 
 MESSAGE_TERMINATOR = ";"
+MAXSTEP = 51
+TOLERANCE = 0.1
+
+def create_circular_trajectory(center, radius=10, steps=101):
+    theta = np.linspace(0, 2*np.pi, steps)
+    temp = np.array([np.zeros(len(theta)), np.cos(theta), np.sin(theta)]).transpose()
+    return center + radius*temp
+
+points = create_circular_trajectory([130, 0, 270], 40, MAXSTEP) # draw a circle
+euler = np.array([0,0,0]) # keep same orientation for all points
 
 class RepeatedTimer(object):
     def __init__(self, interval, function, *args, **kwargs):
@@ -61,6 +72,8 @@ class XboxClient():
         self.connected = False
         self.controller_exists = False
         self.counter = 0
+        self.prev_data = []
+        self.prev_msg = ""
         self.timer = RepeatedTimer(1/self.rate, function=self.timer_callback)
 
         # Create controller object with button event handling
@@ -83,13 +96,29 @@ class XboxClient():
                 print("New controller detected!")
                 self.controller_exists = True
         
-            data = self.xbox.read()
-            message = ",".join([str(elem) for elem in data])
-            message = "controller " + message + MESSAGE_TERMINATOR # adding the keyword for the controller command parser, and terminator
-            try:
-                self.sock.send(message.encode())
-                if self.verbose: print('[{}] Sent messgage: {!r}'.format(self.counter, message))
-                self.counter+=1
+            try:      
+                joy_data = []
+                joystick_indices = [0, 1, 2, 3, 4, 5]
+                data = self.xbox.read()
+                if not all( abs(i)<TOLERANCE  for i in data): 
+                    for j in data:
+                        if abs(j) >= TOLERANCE: joy_data.append(j)
+                        else: joy_data.append(0.0)
+                    #joy_data = [data[i] for i in joystick_indices]
+                    
+                    msg = ",".join([str(elem) for elem in joy_data])
+                    msg = "controller " + msg + MESSAGE_TERMINATOR # adding the keyword for the controller command parser, and terminator
+                    #msg =  "pose " + ",".join([str(i) for i in points[self.counter]]) +",0,0,0"+ MESSAGE_TERMINATOR
+                    #if all(data[i]>0 for i in joystick_indices)
+                    self.sock.send(msg.encode())
+                    self.prev_msg = msg
+                    self.prev_joy = joy_data
+                    if self.verbose: print('[{}] Sent messgage: {!r}'.format(self.counter, msg))
+                    #self.counter+=1
+                    if self.counter >= MAXSTEP-1:
+                        self.counter = 0
+                    else:
+                        self.counter += 1
                 
             except KeyboardInterrupt:
                 if self.verbose: print("KeyboardInterrupt detected")

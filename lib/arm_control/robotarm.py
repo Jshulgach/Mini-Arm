@@ -1,4 +1,4 @@
-import gc
+
 import time
 import busio
 import board
@@ -6,7 +6,7 @@ from adafruit_servokit import ServoKit
 from arm_utils.armTransforms import *
 
 __author__ = "Jonathan Shulgach"
-__version__ = "0.5.9"
+__version__ = "0.9.1"
 
 # Servo channel numbering on the PCA9685
 BASE_SERVO           = 15
@@ -101,19 +101,20 @@ class RobotArm:
     def robotinfo(self):
         """ Helper function to display the state of the robot"""
         self.logger(
-            "\n=========================================== Robot Info ===========================================" +
+            "\n=================================== Robot Info ===================================" +
             "\nCurrent joint state: {}".format([angle.deg + self.joint_offsets[i] for i,angle in enumerate(self.angles)]) +
-            "\nCurrent pose: \n{}".format(self.config.cords) +
-            "\n==================================================================================================")
+            "\nCurrent pose: {}".format(self.config) +
+            "\n==================================================================================")
 
     def set_joints(self, new_angles, absolute=False):
         """Function that updates the joint state angles for the intrnal model as well as physical hardware
 
         :param new_angles: (list) a numeric list of the new joint angles for the robot
         """
+        self.angles = angle_list(new_angles[0:6], "deg")
         if self.verbose: self.logger("Set joint angles: {}".format(new_angles))
         for i, val in enumerate(new_angles):
-            if self.verbose: self.logger("Changing joint:{} position to: {}".format(i+1, val))
+            if self.verbose: self.logger("Changing joint:{} position to: {}".format(i+1, val + self.joint_offsets[i]))
             self.set_joint(i, val)
             
     def get_joints(self):
@@ -128,7 +129,6 @@ class RobotArm:
         if not self.simulate_hardware:
             if self.flip_direction[i]: val = -val
             self.servos.servo[ServoIndex(i+1)].angle = val + self.joint_offsets[i]
-        #time.sleep(0.05)  # Provide delay to give time for servos to update position
         
     def set_gripper(self, val):
         """ Function that updates only the gripper servo
@@ -149,13 +149,12 @@ class RobotArm:
         target_pos = [float(i) for i in target_pos] # Make sure values are not strings
         #euler = self.config.euler_angles
         #if len(target_pos)>3: euler = angle_list(target_pos[3:6], "deg")
-        
-        self.angles = self.inverse_kinematics(Config(target_pos[:3], angle_list(target_pos[3:6], "deg")))
+        config_msg = Config(target_pos[:3], angle_list(target_pos[3:6], "deg"))
+        self.angles = self.inverse_kinematics(config_msg)
         if self.verbose: self.logger("Calculated angles: {}".format([angle.deg for angle in self.angles]))
         self.set_joints([i.deg for i in self.angles])
         if len(target_pos) > 6:
             self.set_gripper(target_pos[6])
-        gc.collect() # garbage collector: free up memory
         
     def handle_delta(self, delta_pos):
         """ Adjust the end effector position to a new relative position using the delta input. 
@@ -298,14 +297,15 @@ class RobotArm:
         if joint_angles is None:
             if self.verbose: self.logger("Position {} beyond physical range. Restoring previous pose".format([config.cords],[i.deg for i in config.euler_angles]))
             return self.angles
+            
+        # Check all joint angles are within limits
+        if all([self.joint_limits[i](val.rad) for i,val in enumerate(joint_angles)]):
+            # TO-DO: implement check to make sure that angles don't flip 180 degrees 
+            self.update_current_pose(config)
+            return joint_angles
         else:
-            # Check all joint angles are within limits
-            if all([self.joint_limits[i](val.rad) for i,val in enumerate(joint_angles)]):
-                self.update_current_pose(config)
-                return joint_angles
-            else:
-                self.logger("A joint is hitting its limit. Restoring previous pose".format([config.cords],[i.deg for i in config.euler_angles]))
-                return self.angles
+            self.logger("A joint is hitting its limit. Restoring previous pose".format([config.cords],[i.deg for i in config.euler_angles]))
+            return self.angles
             
 
     def update_current_pose(self, config):

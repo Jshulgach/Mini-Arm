@@ -30,21 +30,18 @@
       - Import the PCA9685 module. Available in the bundle and here:
             https://github.com/adafruit/Adafruit_CircuitPython_PCA9685
       - buzzer melody ideas: https://gist.github.com/mandyRae/459ae289cdfcf6d98a6b
+      
+      
+      Blog with Asyncio library help: https://leimao.github.io/blog/Python-AsyncIO-Asynchronous-IO/#Asynchronous-Read
 """
-from arm_control.async_controller import AsyncController as MiniArmController
 
-def main():
-    try:
-        robot_controller = MiniArmController(port=1000,
-                                             simulate_hardware=False,
-                                             offline=False,
-                                             verbose=False
-                           )
-        robot_controller.start()   
-        
-    except KeyboardInterrupt:    
-        print("Keyboard pressed")
-        robot_controller.stop()
+# Warning: enabling verbose puts strain on the controller, and it makes the update routine run at 10Hz.
+
+from arm_control.async_controller2 import AsyncController as MiniArm
         
 if __name__ == "__main__":
-    main()
+    miniarm = MiniArm(port=1000, simulate_hardware=False, offline=False, verbose=False)
+    try:
+        miniarm.start()        
+    except KeyboardInterrupt:    
+        miniarm.stop()

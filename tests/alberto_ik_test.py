@@ -45,7 +45,7 @@ def helper_inverse_kinematics(robot, joints, pos, euler):
             pos (list[float]): x,y,z positions of config
             euler (list[Angle]): A,B,C euler angles of config
         """
-        print("================== Helper forward Kinematic Test ====================")
+        print("================== Helper inverse Kinematic Test ====================")
         print("Passed position: {}".format(pos))
         print("Passed euler angles: {}".format(euler))
         euler = util.angle_list(euler, "deg")

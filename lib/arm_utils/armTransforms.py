@@ -1,12 +1,6 @@
-#from dataclasses import dataclass
-#from typing import List
 
 import ulab.numpy as np
 
-__author__ = "Alberto Abarzua"
-
-
-#@dataclass
 class Angle:
     """Angle class, used to store angle values in different units.
     Radians, and degrees.
@@ -51,8 +45,6 @@ class Angle:
                 return Angle(value, "deg")
         return other
 
-
-#@dataclass
 class Config:
     """Pose dataclass, used to store all the information required to determine the position and configuration of 
     the robot arm. (coordinates, euler angles of the tcp and the state of the tool (for now None))
@@ -363,5 +355,11 @@ def get_wrist_center(gripper_point, R0g, dg = 0.303):
     zw = zu - dg * nz 
 
     return xw, yw, zw
+
+
+def create_circular_trajectory(center, radius=10, steps=101):
+    theta = np.linspace(0, 2*np.pi, steps)
+    temp = np.array([np.zeros(len(theta)), np.cos(theta), np.sin(theta)]).transpose()
+    return center + radius*temp
 
 

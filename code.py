@@ -37,10 +37,13 @@
 
 # Warning: enabling verbose puts strain on the controller, and it makes the update routine run at 10Hz.
 
-from arm_control.async_controller2 import AsyncController as MiniArm
+from arm_control.async_controller import AsyncController as MiniArm
         
 if __name__ == "__main__":
-    miniarm = MiniArm(port=1000, simulate_hardware=False, offline=False, verbose=False)
+    """ The RPI1040 processor ir pretty fast, but when combining analytical computations as well as string buffer 
+    allocations, The method if receiving input commands will determine the robot controller update rate. 
+    """
+    miniarm = MiniArm(port=1000, simulate_hardware=False, offline=True, serial_commands=True, verbose=False)
     try:
         miniarm.start()        
     except KeyboardInterrupt:    

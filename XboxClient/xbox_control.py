@@ -3,6 +3,31 @@ from inputs import get_gamepad
 import math
 import threading
 
+__version__ = "1.0.1"
+
+# My Xbox mapping
+XBOX_MAP = {
+    'LeftJoystickX': 0,
+    'LeftJoystickY': 1,
+    'LeftTrigger': 2,
+    'RightJoystickX': 3,
+    'RightJoystickY': 4,
+    'RightTrigger': 5,
+    'PadX':6,
+    'PadY':7,    
+    'A': 8,
+    'B':9,
+    'X':10,
+    'Y':11,
+    'LeftBumper':12,
+    'RightBumper':13,
+    'Start':14,
+    'Back':15,
+    'None':16,
+    'LeftThumb':17,
+    'RightThumb':18
+}
+
 
 # Microsoft X-Box 360 pad
 XINPUT_CODE_MAP = {
@@ -182,7 +207,6 @@ class XboxController(object):
                     self.UpDPad = event.state
                 elif event.code == 'BTN_TRIGGER_HAPPY4':
                     self.DownDPad = event.state
-
 
 
 # Run main if desired for testing controller inputs

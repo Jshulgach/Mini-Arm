@@ -2,7 +2,16 @@
 # Mini-Arm
 ![](https://github.com/Jshulgach/Mini-Arm/blob/main/doc/robotic-arm-3d-model-2023.png)
 
-The Mini Arm is a miniature version of the [Desktop-Arm](https://github.com/Jshulgach/Desktop-Arm) project with IK solver inspirations from [Alberto Abarzua](https://github.com/alberto-abarzua/3d_printed_robot_arm) and [Mithi Sevilla](https://github.com/mithi/arm-ik), a portable 6DOF 3D-printed robot arm with open-source models and code. While this little machine can run on a 5V 2A DC adapter, it has other cool features:
+The Mini Arm is a miniature version of the [Desktop-Arm](https://github.com/Jshulgach/Desktop-Arm) project with IK solver inspirations from [Alberto Abarzua](https://github.com/alberto-abarzua/3d_printed_robot_arm) and [Mithi Sevilla](https://github.com/mithi/arm-ik), a portable 6DOF 3D-printed robot arm with open-source models and code.
+Robot DH paramater numerical calculations referenced from:
+ - [Mithi Sevilla](https://github.com/mithi/arm-ik) 
+ - [Zenetio](https://github.com/zenetio/RoboND-Kinematics-Project)
+ - [Ohara124c41](https://github.com/Ohara124c41/RoboND-Kinematics-Kuka-KR210). 
+ - [NitishPuri](https://github.com/NitishPuri/RoboND-Kinematics-Project/)
+ 
+ This package does NOT use any symbolic math packagaes, only numpy, which makes this scalable to microcontrollers with the same kinematic configuration!
+
+While this little machine can run on a 5V 2A DC adapter, it has other cool features:
 
 + Runs CircuitPython on a Raspberry Pico W (wifi operated)
 + All 3D printable components (aside from nuts & bolts)

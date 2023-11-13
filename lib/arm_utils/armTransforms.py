@@ -1,6 +1,11 @@
 
 import ulab.numpy as np
 
+# Matrix mathematics dont seem to be as accurate as the symbolic math or numpy operations
+# on the PC. Small numbers are found in matrices instead of 0, which could be causing jumping
+# values from joint states. Setting an epsilon number will guarant matrix elements should be zero
+eps = 0.000001
+
 class Angle:
     """Angle class, used to store angle values in different units.
     Radians, and degrees.
@@ -136,8 +141,21 @@ def zmatrix(angle):
     ])
     return r
 
+def enforcePositiveServoRange(angle):
+    """ Checks the incoming rotation Angle value and checks its range to be between 0-to-pi. If out of the
+    range it remaps it to the closest angle reflected from the 0-pi axis
+    
+    Parameters:
+    angle    : (Angle) Angle value
+    """
+    if angle.rad > np.pi or angle.rad < -np.pi:
+        angle = Angle(2*np.pi - abs(angle.rad), "rad")
+    if angle.rad < 0: # and angle.rad > -np.pi:
+        angle = Angle(abs(angle.rad), "rad")
+    
+    return angle
 
-def tmatrix(R, D):
+def TransformationMatrix(R, D):
     """Creates a homogeneus transformation matrix using a translation and a rotation matrix.
 
     Args:
@@ -153,6 +171,47 @@ def tmatrix(R, D):
     #])
     temp = np.concatenate((R, D), axis=1)
     T = np.concatenate((temp, np.array([[0, 0, 0, 1]])), axis=0)
+    return T
+
+def TransformationMatrixDH(theta, alpha, a, d):
+    """ Creates a homogenous transformation matrix of one joint frame with respect to the 
+        previous joint frame using the Denavit-Hartenberg convention.
+        
+        Building DH tables:
+            https://automaticaddison.com/how-to-find-denavit-hartenberg-parameter-tables/
+        
+    Parameters:
+    -----------
+    theta  : Angle from joint[i-1] to joint[i] around z[i-1]
+    alpha  : Angle from joint[i-1] to joint[i] around x[i]
+    a      : Distance between previous frame and current frame along x[i] direction
+    d      : Distance from x[i-1] to x[i] along the z[i-1] direction
+    
+    Return:
+    --------
+    T      : Numpy array with the homogenous transformation matrix
+    """
+    
+    r11, r12 = np.cos(theta), -np.sin(theta)
+    r23, r33 = -np.sin(alpha), np.cos(alpha)
+    r21 = np.sin(theta) * np.cos(alpha)
+    r22 = np.cos(theta) * np.cos(alpha)
+    r31 = np.sin(theta) * np.sin(alpha)
+    r32 = np.cos(theta) * np.sin(alpha)
+    y = -d * np.sin(alpha)
+    z = d * np.cos(alpha)
+    
+    T = np.array([
+                 [r11,     r12, 0.000,     a],
+                 [r21,     r22,   r23,     y],
+                 [r31,     r32,   r33,     z],
+                 [0.000, 0.000, 0.000, 1.000]
+                 ])
+    
+    # Enforce epsilon, operation implemented for 1D boolean array only
+    for i, row in enumerate(T):
+        T[i][abs(T[i]) < eps] = 0.00
+
     return T
 
 
@@ -172,6 +231,12 @@ def rotationMatrixToEulerAngles(R):
         A2 = np.arctan2(R[2, 1] / np.cos(B2), R[2, 2] / np.cos(B2))
         C1 = np.arctan2(R[1, 0] / np.cos(B1), R[0, 0] / np.cos(B1))
         C2 = np.arctan2(R[1, 0] / np.cos(B2), R[0, 0] / np.cos(B2))
+        
+        # Enforce epsilon, operation implemented for 1D boolean array only
+        if A1 < eps: A1 = 0.000
+        if B1 < eps: B1 = 0.000
+        if C1 < eps: C1 = 0.000
+
         return [Angle(float(A1), "rad"), Angle(float(B1), "rad"), Angle(float(C1), "rad")]
     else:
         C = 0
@@ -181,6 +246,12 @@ def rotationMatrixToEulerAngles(R):
         else:
             B = -np.pi / 2.0
             A = -C + np.arctan2(-R[0, 1], -R[0, 2])
+
+        # Enforce epsilon, operation implemented for 1D boolean array only
+        if A < eps: A = 0.000
+        if B < eps: B = 0.000
+        if C < eps: C = 0.000
+
         return [Angle(float(A), "rad"), Angle(float(B), "rad"), Angle(float(C), "rad")]
 
 
@@ -313,34 +384,16 @@ def gen_curve_points(points):
     return result, sleep_idxs
 
 
-class OutOfBoundsError(Exception):
-    """OutOfBoundsEror, used to raise an exception when inverse kinematics does not 
-    find a solution within the restraints.
-
-    """
-
-    def __init__(self, config, message="Out of bounds."):
-        """Creates a new exception, with a set of angles as input and a message.
-
-        Args:
-            message (str, optional): eror message.. Defaults to "Out of bounds.".
-        """
-        super().__init__(message)
-        self.config = config
-        self.message = message
-
-    def __str__(self):
-        return self.message
-
 def rotationFromBaseToGripper(alpha, beta, gamma):
     # Rotation of urdf_gripper with respect to the base frame interms of alpha = yaw, beta = pitch, gamma = roll
     R0u = np.array([
         [1.000*np.cos(alpha)*np.cos(beta), -1.000*np.sin(alpha)*np.cos(gamma) + np.sin(beta)*np.sin(gamma)*np.cos(alpha), 1.0*np.sin(alpha)*np.sin(gamma) + np.sin(beta)*np.cos(alpha)*np.cos(gamma)],
         [1.000*np.sin(alpha)*np.cos(beta),  np.sin(alpha)*np.sin(beta)*np.sin(gamma) + 1.000*np.cos(alpha)*np.cos(gamma), np.sin(alpha)*np.sin(beta)*np.cos(gamma) - 1.0*np.sin(gamma)*np.cos(alpha)],
-        [          -1.000*np.sin(beta),                                     1.000*np.sin(gamma)*np.cos(beta),                                    1.0*np.cos(beta)*np.cos(gamma)]])
+        [             -1.000*np.sin(beta),                                              1.000*np.sin(gamma)*np.cos(beta),                                             1.0*np.cos(beta)*np.cos(gamma)]])
     return R0u
 
-def get_wrist_center(gripper_point, R0g, dg = 0.303):
+
+def get_wrist_center(gripper_point, R0g, dg = 0.100):
     # get the coordinates of the wrist center wrt to the base frame (xw, yw, zw)
     # given the following info:
     # the coordinates of the gripper (end effector) (x, y, z)
@@ -361,5 +414,13 @@ def create_circular_trajectory(center, radius=10, steps=101):
     theta = np.linspace(0, 2*np.pi, steps)
     temp = np.array([np.zeros(len(theta)), np.cos(theta), np.sin(theta)]).transpose()
     return center + radius*temp
+    
+def get_hypotenuse(a, b):
+  return np.sqrt(a*a + b*b)
 
+def get_cosine_law_angle(a, b, c):    
+  cos_gamma = (a*a + b*b - c*c) / (2*a*b)
+  sin_gamma = np.sqrt(1 - cos_gamma * cos_gamma)
+  gamma = np.arctan2(sin_gamma, cos_gamma)
 
+  return gamma

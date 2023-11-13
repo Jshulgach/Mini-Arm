@@ -6,7 +6,7 @@ from adafruit_servokit import ServoKit
 from arm_utils.armTransforms import *
 
 __author__ = "Jonathan Shulgach"
-__version__ = "0.9.1"
+__version__ = "1.0.1"
 
 # Servo channel numbering on the PCA9685
 BASE_SERVO           = 15
@@ -33,7 +33,7 @@ def ServoIndex(key):
         num = servo_dict[key]
     return num
 
-class RobotArm:
+class RobotArm(object):
     """RobotArm class, used to create and calculate the kinematics of a robot arm.
     """
 
@@ -70,26 +70,31 @@ class RobotArm:
         self.a6x = 0
         self.a6z = 0
         self.a6y = 0
+        
+        # DH parameters, list of dicts( 'theta', 'alpha', 'a', 'd')
+        self.dh = None
 
-        # joints constraints.
+        # joints constraints
         default_min = -np.pi/2
         default_max = np.pi/2
         self.flip_direction = [False, False, True, True, True, True, False]
-        self.joint_offsets = [90, 90, 54, 90, 90, 90, 0]
+        #self.joint_offsets = [0, 0, 0, 0, 0, 0, 0] 
+        self.joint_offsets = [90, 90, 90, 90, 90, 90, 0] 
         self.joint_limits = [lambda x: x > default_min and x < default_max for x in range(0,6)]
 
         # Joints angles
-        #self.pose = None
-        self.angles = [Angle(0, "rad") for i in range(6)]
-        self.config = Config([], [], 100)
-        self.direct_kinematics()  # update self.config with initial values.
+        self.angles = [Angle(0.00, "rad") for i in range(6)] # Used to tracking the joint state
+        self.config = Config([], [], 100) # Used for tracking the end effector pose
+        self.reference_pos = None
+        #self.NEW_forward_kinematics()
+        #self.direct_kinematics()  # update self.config with initial values.
 
         # Create references to the servo hardware
         if not self.simulate_hardware:
             # necessary to create the custom busio.I2C object instead of the ServoKit default due to some dormant library issue 
             i2c = busio.I2C(board.GP1, board.GP0)
-            self.servos = ServoKit(channels=16, i2c=i2c)
-
+            self.servos = ServoKit(channels=16, i2c=i2c) 
+            
     @property
     def constraints(self):
         return [self.j1_range, self.j2_range, self.j3_range, self.j4_range, self.j5_range, self.j6_range]
@@ -99,26 +104,32 @@ class RobotArm:
         print("[{:.3f}][{}] {}".format(time.monotonic(), self.name, msg))
 
     def robotinfo(self):
-        """ Helper function to display the state of the robot"""
-        self.logger(
-            "\n=================================== Robot Info ===================================" +
-            "\nCurrent joint state: {}".format([angle.deg + self.joint_offsets[i] for i,angle in enumerate(self.angles)]) +
-            "\nCurrent pose: {}".format(self.config) +
-            "\n==================================================================================")
-
+        """ Helper function to display the state of the robot. The outpout will look like below
+        
+        Current joint state: [90, 90, 90, 90, 90, 90]
+        Current pose:   cords: [x: 185.00000, y: 0.00000, z: 215.00000]
+          angles: [Roll: 0.00000, Pitch: -0.00000, Yaw:0.00000]
+          tool: 100
+        """
+        self.logger("\nCurrent joint state: {}\nCurrent pose: {}".format(self.get_joints(),self.config))
+        self.logger("Calculated angles: {}".format(self.get_joints()))
+            
     def set_joints(self, new_angles, absolute=False):
-        """Function that updates the joint state angles for the intrnal model as well as physical hardware
+        """Function that updates the joint state angles for the internal model as well as physical hardware
 
-        :param new_angles: (list) a numeric list of the new joint angles for the robot
+        Parameters:
+        ------------
+        new_angles    : (list) a numeric list of the new joint angles for the robot  
         """
         self.angles = angle_list(new_angles[0:6], "deg")
         if self.verbose: self.logger("Set joint angles: {}".format(new_angles))
         for i, val in enumerate(new_angles):
-            if self.verbose: self.logger("Changing joint:{} position to: {}".format(i+1, val + self.joint_offsets[i]))
+            #if self.verbose: self.logger("Changing joint:{} position to: {}".format(i+1, val + self.joint_offsets[i]))
             self.set_joint(i, val)
-            
+                        
     def get_joints(self):
-        return [angle.deg + self.robot.joint_offsets[i] for i, angle in enumerate(self.angles)]
+        #return [angle.deg + self.joint_offsets[i] for i, angle in enumerate(self.angles)]
+        return [angle.deg for i, angle in enumerate(self.angles)]
         
     def set_joint(self, i, val):
         """ Function that moves the physical motor/servo to the specified angle
@@ -126,36 +137,97 @@ class RobotArm:
         :param idx: (int) joint index, indexing starts at zero
         :param val: (int) angle value to set the specified joint at
         """
-        if not self.simulate_hardware:
-            if self.flip_direction[i]: val = -val
-            self.servos.servo[ServoIndex(i+1)].angle = val + self.joint_offsets[i]
         
+        # Check that the proper motor indexing is happenning
+        if i > 6:
+            self.logger("Warning - Motor indexing starts at 0")
+            return
+        
+        if not self.simulate_hardware:
+            # Some actuators might be mounted in a way that the rotation direction needs to be reversed
+            if self.flip_direction[i]: val = -val
+            
+            # Check that the angle range is within limits of the actuator
+            if self.check_within_range(i, val + self.joint_offsets[i]):
+                if self.verbose: self.logger("Changing joint:{} position to: {}".format(i+1, val+ self.joint_offsets[i]))
+                
+                # Set the new position to the actuator. ServoIndex dictionary is only necessary for custom
+                # channel mapping from the servo motor shield
+                self.servos.servo[ServoIndex(i+1)].angle = val + self.joint_offsets[i]
+                
+                # Update the internal joint state
+                angles = self.get_joints()  
+                angles[i] = val
+                self.forward_kinematics(angle_list(angles, "deg")) # Update the new position of the gripper
+            else:
+                if self.verbose: self.logger("Warning. Servo value passed '{}' not within range. Cancelling new joint position".format(val + self.joint_offsets[i]))
+                
+    def validate_joint_angles(self, angles):
+        """ Helper function that checks the sign for each of the joints to check it's between 0-180 
+        and corrects them if they scale over
+        
+        Parameters:
+        -----------
+        angles     : (list) Old list of Angle elements
+        
+        Return:
+        -----------
+        angles     : (list) New list of Angle elements
+        """
+        for i, angle in enumerate(angles):
+            angles[i] = enforcePositiveServoRange(angle)
+            
+        return angles
+            
+    def check_within_range(self, i, val):
+        """ Helper function that determines whether the angle is within the range of the specified joint.
+        For now it's just going to check that the angle is between 0-180
+        
+        :param idx: (int) joint index, indexing starts at zero
+        :param val: (int) angle value to set the specified joint at
+
+        :return: (bool)
+        """
+        if val >=0 and val <= 180:
+            return True
+        else: 
+            return False
+
     def set_gripper(self, val):
         """ Function that updates only the gripper servo
         
         :param val: (int) angle value to set the specified joint at
         """
         if self.verbose: self.logger("Changing gripper position to: {}".format(val))
-        self.set_joint(6, val)
+        self.servos.servo[ServoIndex('gripper')].angle = val
+        #self.set_joint(6, val)
     
     def get_gripper(self):
         return self.config.tool
-        
+                
     def set_pose(self, target_pos):
         """ Set the end-effector to a new position and update the robot angles accordingly
         
         :param target_pos: (list) numeric list of [x,y,z]  or [x, y, z, roll, pitch, yaw] coordinates
         """
         target_pos = [float(i) for i in target_pos] # Make sure values are not strings
-        #euler = self.config.euler_angles
-        #if len(target_pos)>3: euler = angle_list(target_pos[3:6], "deg")
-        config_msg = Config(target_pos[:3], angle_list(target_pos[3:6], "deg"))
-        self.angles = self.inverse_kinematics(config_msg)
-        if self.verbose: self.logger("Calculated angles: {}".format([angle.deg for angle in self.angles]))
-        self.set_joints([i.deg for i in self.angles])
-        if len(target_pos) > 6:
-            self.set_gripper(target_pos[6])
-        
+        #try:
+        if True:
+            if len(target_pos)>3:
+                config_msg = Config(target_pos[:3], angle_list(target_pos[3:6], "deg"))
+            else:
+                angles = [x.deg for x in self.config.euler_angles]
+                config_msg = Config(target_pos[:3], angle_list(angles, "deg"))
+                
+            self.angles = self.inverse_kinematics(config_msg)
+            self.update_current_pose(config_msg)
+
+            if self.verbose: self.logger("Calculated angles: {}".format(self.get_joints()))
+            self.set_joints([i.deg for i in self.angles])
+            if len(target_pos) > 6: self.set_gripper(target_pos[6])
+        #except:
+        #    if self.verbose: self.logger("Error in setting pose. Check values are of float type and IK solver has no issues")
+                
     def handle_delta(self, delta_pos):
         """ Adjust the end effector position to a new relative position using the delta input. 
             Expecting small inputs (0.01 increments)
@@ -170,8 +242,101 @@ class RobotArm:
         if len(delta_pos) > 6:
             target_pos.append(delta_pos[6])
         return  target_pos
+        
+    def handle_posture_delta(self, delta_pos):
+        
+        try:
+            # Get the static reference position on the first request
+            if not self.reference_pos:
+                self.reference_pos = self.config.cords[:3] + self.config.euler_angles[:3]
+            
+            delta_pos = [float(i) for i in delta_pos] # Make sure values are not strings
+            target_xyz = [a + b for a, b in zip(self.reference_pos[:3], delta_pos[:3])]
+            target_euler = [a.deg + b for a, b in zip(self.reference_pos[3:], delta_pos[3:6])]
+        
+            target_pos = target_xyz + target_euler
+        except:
+            if self.verbose: self.logger("Error in setting pose. Check values are of float type")  
+            target_pos = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]            
+
+        if len(delta_pos) > 6:
+            target_pos.append(delta_pos[6])
+        return  target_pos
  
-    def direct_kinematics(self, angles=None):
+    def update_current_pose(self, config):
+        """ Helper function to update the current robot pose """
+        self.config.cords = config.cords
+        self.config.euler_angels = config.euler_angles
+        self.config.tool = config.tool
+
+    # -----------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------
+    # FORWARD KINEMATICS
+    # -----------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------
+
+    def forward_kinematics(self, angles=None):
+        """ 2nd version of forward kinematics calculator using DH parameters instead
+        Takes a configuration of angles for all the robots joints and 
+        calculates the current position of the Arms tool and it's euler angles. If the list
+        of angles is not provided direct_kinematics will use the robots current angles.
+
+        Args:
+            angles (Angle, optional): list of Angles to use as robot config. Defaults to None.
+
+        Returns:
+            Config: returns the current position of the tool and the current euler angles
+            as a Config.
+        
+        """
+        if (angles == None):
+            angles = self.angles
+
+        T01, T12, T23, T34, T45, T56, T6g = self.get_transformations(angles)
+        T0g = np.dot(np.dot(np.dot(np.dot(np.dot(np.dot(T01, T12), T23), T34), T45), T56), T6g) # dot product for all of them!
+        self.config.cords = list(T0g[:3, 3])
+        
+        # need to adjust for tool frame
+        R0g = np.dot(T0g[:3,:3], np.dot( ymatrix( Angle(np.pi/2,"rad")), zmatrix( Angle(-np.pi,"rad")) ) ) # dot product!!!
+        self.config.euler_angles = rotationMatrixToEulerAngles(R0g)
+
+        return self.config
+
+    def helper_forward_kinematics(self, joints, pos, euler):
+        """Helper method used to test direct_kinematics
+
+        Args:
+            joints (list[Angle]): angles for the robot joints in deg.
+            pos (list[float]): x,y,z expected positions
+            euler (list[float]): A,B,C expected euler angles in deg.
+        """
+        self.logger("================== Helper forward Kinematic Test ====================")
+        self.logger("Passed joints: {}".format(joints))
+        angles = angle_list(joints, "rad")
+        config = self.forward_kinematics(angles)
+        self.logger("Predicted position: {}".format(pos))
+        self.logger("Calculated position: {}".format(config.cords))
+        self.logger("Predicted euler angles: {}".format(euler))
+        self.logger("Calculated euler angle: {}".format([angle.rad for angle in config.euler_angles]))
+        self.logger("=====================================================================")
+
+    def get_transformations(self, angles=None):
+        """ Helper function that outputs all the homogenous transformations in the kinematic chain
+        """
+        if (angles == None):
+            angles = self.angles
+        J1, J2, J3, J4, J5, J6 = angles
+
+        T01 = TransformationMatrixDH(J1.rad + self.dh[0]['theta'], self.dh[0]['alpha'], self.dh[0]['a'], self.dh[0]['d'])
+        T12 = TransformationMatrixDH(J2.rad + self.dh[1]['theta'], self.dh[1]['alpha'], self.dh[1]['a'], self.dh[1]['d'])
+        T23 = TransformationMatrixDH(J3.rad + self.dh[2]['theta'], self.dh[2]['alpha'], self.dh[2]['a'], self.dh[2]['d'])
+        T34 = TransformationMatrixDH(J4.rad + self.dh[3]['theta'], self.dh[3]['alpha'], self.dh[3]['a'], self.dh[3]['d'])
+        T45 = TransformationMatrixDH(J5.rad + self.dh[4]['theta'], self.dh[4]['alpha'], self.dh[4]['a'], self.dh[4]['d'])
+        T56 = TransformationMatrixDH(J6.rad + self.dh[5]['theta'], self.dh[5]['alpha'], self.dh[5]['a'], self.dh[5]['d'])
+        T6g = TransformationMatrixDH(self.dh[6]['theta'], self.dh[6]['alpha'], self.dh[6]['a'], self.dh[6]['d'])
+        return T01, T12, T23, T34, T45, T56, T6g
+
+    def OLD_direct_kinematics(self, angles=None):
         """Direct Kinematics function,takes a configuration of angles for all the robots joints and 
         calculates the current position of the Arms tool and it's euler angles. If the list
         of angles is not provided direct_kinematics will use the robots current angles.
@@ -183,12 +348,6 @@ class RobotArm:
             Config: returns the current position of the tool and the current euler angles
             as a Config.
         """
-        # -----------------------------------------------------------------------------------
-        # -----------------------------------------------------------------------------------
-        # FORWARD KINEMATCIS
-        # -----------------------------------------------------------------------------------
-        # -----------------------------------------------------------------------------------
-
         if (angles == None):
             angles = self.angles
         J1, J2, J3, J4, J5, J6 = angles
@@ -199,15 +358,18 @@ class RobotArm:
             [self.a1y],
             [self.a1z]
         ])
-        T1 = tmatrix(R1, D1)
+        T1 = TransformationMatrix(R1, D1)
+        #print(T1)
         # J1 -->  J2
         R2 = ymatrix(J2)
+        #R2 = xmatrix(J2)
         D2 = np.array([
             [self.a2x],
             [self.a2y],
             [self.a2z]
         ])
-        T2 = tmatrix(R2, D2)
+        T2 = TransformationMatrix(R2, D2)
+        #print(T2)
         # J2 -->  J3
         R3 = ymatrix(J3)
         D3 = np.array([
@@ -215,16 +377,17 @@ class RobotArm:
             [self.a3y],
             [self.a3z]
         ])
-        T3 = tmatrix(R3, D3)
+        T3 = TransformationMatrix(R3, D3)
+        #print(T3)
         # J3 -->  J4
-
         R4 = xmatrix(J4)
         D4 = np.array([
             [self.a4x],
             [self.a4y],
             [self.a4z]
         ])
-        T4 = tmatrix(R4, D4)
+        T4 = TransformationMatrix(R4, D4)
+        #print(T4)
         # J4 -->  J5
         R5 = ymatrix(J5)
         D5 = np.array([
@@ -232,7 +395,8 @@ class RobotArm:
             [self.a5y],
             [self.a5z]
         ])
-        T5 = tmatrix(R5, D5)
+        T5 = TransformationMatrix(R5, D5)
+        #print(T5)
         # J5 -->  J6
         R6 = xmatrix(J6)
         D6 = np.array([
@@ -240,7 +404,9 @@ class RobotArm:
             [self.a6y],
             [self.a6z]
         ])
-        T6 = tmatrix(R6, D6)
+        T6 = TransformationMatrix(R6, D6)
+        #print(T6)
+
         # Base--> TCP
         temp1 = np.dot(np.dot(np.dot(np.dot(np.dot(T1, T2), T3), T4), T5), T6)
         position = np.dot(temp1, np.array([[0], [0], [0], [1]]))
@@ -248,51 +414,154 @@ class RobotArm:
 
         rotation = np.dot(np.dot(np.dot(np.dot(np.dot(R1, R2), R3), R4), R5), R6)
         #rotation = R1 @ R2 @ R3 @ R4 @ R5 @ R6
+        
         euler_angles = rotationMatrixToEulerAngles(rotation)
         pos = list(position[:3, 0])
 
         self.config.cords = pos[0:3]
         self.config.euler_angles = euler_angles
-        #self.pose.cords = pos[0:3]
-        #self.pose.euler_angles = euler_angles
         return self.config
         
-    def helper_direct_kinematics(self, joints, pos, euler):
-        """Helper method used to test direct_kinematics
+    # -----------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------
+    # INVERSE KINEMATICS
+    # -----------------------------------------------------------------------------------
+    # -----------------------------------------------------------------------------------
+            
+    def inverse_kinematics(self, config=None):
+        """NEW Safe version of inverse kinematics, calls not_safe_IK that does all the calculations.
 
         Args:
-            joints (list[Angle]): angles for the robot joints in deg.
-            pos (list[float]): x,y,z expected positions
-            euler (list[float]): A,B,C expected euler angles in deg.
-        """
-        self.logger("================== Helper forward Kinematic Test ====================")
-        self.logger("Passed joints: {}".format(joints))
-        angles = angle_list(joints, "deg")
-        config = self.direct_kinematics(angles)
-        self.logger("Predicted position: {}".format(pos))
-        self.logger("Calculated position: {}".format(config.cords))
-        self.logger("Predicted euler angles: {}".format(euler))
-        self.logger("Calculated euler angle: {}".format([angle.deg for angle in config.euler_angles]))
-        self.logger("=====================================================================")
+            config (Config), optional): configuration of the robot to reach. Defaults to None.
 
-    def inverse_kinematics(self, config=None):
+        Returns:
+            list[Angle]: list of Angles the robot arm should have to reach config.
+        """
+        joint_angles = self.not_safe_IK(config)
+        if joint_angles is None:
+            if self.verbose: self.logger("Position {} beyond physical range. Restoring previous pose".format([config.cords],[i.deg for i in config.euler_angles]))
+            return self.angles
+
+        # Implement check to make sure that angles don't flip 180 degrees 
+        #print("before: {}".format(self.get_joints()))
+        #joint_angles = self.validate_joint_angles(joint_angles)
+        #print("after: {}".format(self.get_joints()))
+         
+        # Check all joint angles are within limits
+        #if not all([self.joint_limits[i](val.rad) for i,val in enumerate(joint_angles)]):
+        #    self.logger("A joint is hitting its limit. Restoring previous pose".format([config.cords],[i.deg for i in config.euler_angles]))
+        #    return self.angles        
+
+        return joint_angles
+
+    def not_safe_IK(self, config):
+    
+        #try:
+        if True:
+            if (config == None):
+                config = self.config
+                
+            xyz, euler_angles = config.cords, config.euler_angles
+            A, B, C = euler_angles
+        
+            # Find gipper transformation with respect to base
+            Rgu = np.dot(zmatrix(Angle(np.pi, "rad")), ymatrix(Angle(-np.pi/2, "rad")))    
+            R0u = eulerAnglesToRotMatrix(A, B, C)
+            R0g = np.dot(R0u, Rgu.transpose())
+
+            # Find wrist center urdf transformation 
+            wrist_center = self.get_wrist_center(xyz, R0g, self.dh[6]['d'])
+
+            # Find joints 1-3
+            J1, J2, J3 = self.get_first_three_angles(wrist_center)
+
+            # Find wrist transformation with respect to base given new angles
+            angles = self.angles
+            prev = angles
+            angles[3:6] = J1, J2, J3
+            T01, T12, T23, _ , _ , _ , _ = self.get_transformations(angles)     
+
+            # Find joints 4-6            
+            T03 = np.dot(np.dot(T01, T12), T23)    
+            R36 = np.dot(T03[:3,:3].transpose(), R0g)
+            J4, J5, J6 = self.get_last_three_angles(R36)
+        
+            return nearest_to_prev([J1, J2, J3, J4, J5, J6], prev)
+        #except:
+        #    return None
+
+    def helper_inverse_kinematics(self, joints, pos, euler):
+        """Helper method used to test inverse_kinematics (IK) from a configuration of positions and euler angles.
+
+        Args:
+            joints (list[Angle]): Expected angles for the robot (what IK should return)
+            pos (list[float]): x,y,z positions of config
+            euler (list[Angle]): A,B,C euler angles of config
+        """
+        self.logger("================== Helper Inverse Kinematic Test ====================")
+        self.logger("Passed position: {}".format(pos))
+        self.logger("Passed euler angles: {}".format(euler))
+        angles = self.inverse_kinematics(Config(pos, angle_list(euler, "rad")))
+        self.logger("Predicted angles: {}".format(joints))
+        self.logger("Calculated angles: {}".format([angle.rad for angle in angles]))
+        #self.logger("Calculated angles: {}".format([angle.deg for angle in angles]))
+        self.logger("=====================================================================")
+        
+    def get_first_three_angles(self, wrist_center):
+    
+        x, y, z  = wrist_center
+        l = get_hypotenuse(self.dh[3]['d'], -self.dh[3]['a'])
+        phi = np.arctan2(self.dh[3]['d'], -self.dh[3]['a'])
+        x_prime = get_hypotenuse(x, y)
+        mx = x_prime -  self.dh[1]['a']
+        my = z - self.dh[0]['d']
+        m = get_hypotenuse(mx, my)
+        alpha = np.arctan2(my, mx)
+  
+        gamma = get_cosine_law_angle(l, self.dh[2]['a'], m)
+        beta = get_cosine_law_angle(m, self.dh[2]['a'], l)
+  
+        q1 = np.arctan2(y, x)
+        q2 = np.pi/2 - beta - alpha 
+        q3 = -(gamma - phi)
+     
+        return Angle(q1, "rad"), Angle(q2, "rad"), Angle(q3, "rad")
+        
+    def get_last_three_angles(self, R):
+
+        sin_q5 = np.sqrt(R[0, 2]**2 + R[2, 2]**2) 
+  
+        q4 = np.arctan2(R[2, 2], -R[0, 2])
+        q5 = np.arctan2(sin_q5, R[1, 2])
+        q6 = np.arctan2(-R[1, 1], R[1, 0])
+        
+        # because this model has some singularities, we may consider
+        if( np.sin(q5) < 0 ):
+            q4 = np.arctan2(-R[2, 2], R[0, 2])
+            q6 = np.arctan2(R[1, 1], -R[1, 0])
+    
+        return Angle(q4, "rad"), Angle(q5, "rad"), Angle(q6, "rad")
+    
+    def get_wrist_center(self, gripper_point, R0g, dg = 0.303):
+
+        xu, yu, zu = gripper_point 
+    
+        nx, ny, nz = R0g[0, 2], R0g[1, 2], R0g[2, 2]
+        xw = xu - dg * nx
+        yw = yu - dg * ny
+        zw = zu - dg * nz 
+        
+        return xw, yw, zw
+  
+    def OLD_inverse_kinematics(self, config=None):
         """Safe version of inverse kinematics, calls not_safe_IK that does all the calculations.
 
         Args:
             config (Config), optional): configuration of the robot to reach. Defaults to None.
 
-        Raises:
-            OutOfBoundsError: if the config is not achievable an exception is raised.
-
         Returns:
             list[Angle]: list of Angles the robot arm should have to reach config.
         """
-        # -----------------------------------------------------------------------------------
-        # -----------------------------------------------------------------------------------
-        # INVERSE KINEMATICS
-        # -----------------------------------------------------------------------------------
-        # -----------------------------------------------------------------------------------
-    
         joint_angles = self.not_safe_IK(config)
         if joint_angles is None:
             if self.verbose: self.logger("Position {} beyond physical range. Restoring previous pose".format([config.cords],[i.deg for i in config.euler_angles]))
@@ -307,14 +576,7 @@ class RobotArm:
             self.logger("A joint is hitting its limit. Restoring previous pose".format([config.cords],[i.deg for i in config.euler_angles]))
             return self.angles
             
-
-    def update_current_pose(self, config):
-        """ Helper function to update the current robot pose """
-        self.config.cords = config.cords
-        self.config.euler_angels = config.euler_angles
-        self.config.tool = config.tool
-
-    def not_safe_IK(self, config=None):
+    def OLD_not_safe_IK(self, config=None):
         """OLD METHOD Gets the angles that the robots joints should have so that the tool is in the position and
         euler angles given by config. If config is None the current config of the robot arm is used.
 
@@ -394,20 +656,4 @@ class RobotArm:
         else:
             #return [Angle(0, "rad") for angle in range(0,6)]
             return None
-            
-    def helper_inverse_kinematics(self, joints, pos, euler):
-        """Helper method used to test inverse_kinematics (IK) from a configuration of positions and euler angles.
-
-        Args:
-            joints (list[Angle]): Expected angles for the robot (what IK should return)
-            pos (list[float]): x,y,z positions of config
-            euler (list[Angle]): A,B,C euler angles of config
-        """
-        self.logger("================== Helper Inverse Kinematic Test ====================")
-        self.logger("Passed position: {}".format(pos))
-        self.logger("Passed euler angles: {}".format(euler))
-        angles = self.inverse_kinematics(Config(pos, angle_list(euler, "deg")))
-        self.logger("Predicted angles: {}".format(joints))
-        self.logger("Calculated angles: {}".format([angle.deg for angle in angles]))
-        self.logger("=====================================================================")
-
+        

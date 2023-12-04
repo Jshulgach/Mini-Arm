@@ -153,7 +153,7 @@ class XboxClient:
         # asyncio.create_task(self.helper_queue_msgs(50))  # 50
 
         self.logger("Setting up robot update rate")
-        asyncio.create_task(self.update(10))
+        asyncio.create_task(self.update(5))
 
         self.logger("{} running!".format(self.name))
 
@@ -161,12 +161,13 @@ class XboxClient:
             await asyncio.sleep(0)  # Calling #async with sleep for 0 seconds allows coroutines to run
 
 
-    async def update(self, interval=100):
+    async def update(self, interval=100): 
         """ A callback function that gets called every "1/rate" seconds
         The function reads the current state of the joystick and sends it as a string to the
         connected ip address and port
 
         """
+        i = 0
         while not self.all_stop:
             if self.controller_connected() and self.usb_serial:
 
@@ -185,9 +186,15 @@ class XboxClient:
                     self.logger("Sending: {}".format(str(cmd)))
                     self.usb_serial.write(cmd.encode('utf8'))
                     
+                #cmd = "robotinfo;"
+                #cmd = "getpose;"
                 # Get FSR Readings
-                cmd = "fsr;"                
-                self.usb_serial.write(cmd.encode('utf8'))
+                #cmd = "fsr;"                
+                #self.usb_serial.write(cmd.encode('utf8'))
+                if i > 5:
+                    self.usb_serial.write("robotinfo;".encode('utf8'))
+                    i=0
+                i = i + 1
                     
                 if self.usb_serial.inWaiting():
                     print("[{:.3f}][Robot] {}".format(time.monotonic(), self.usb_serial.readline().decode('utf8')), end="")
@@ -262,7 +269,8 @@ class XboxClient:
             dz = -gain * float(data[XBOX_MAP['LeftBumper']])
        
         if any((dx, dy, dz)):       
-            cmd = "delta:" + str(dx) + "," + str(dy) + "," + str(dz) + ",0,0,0" + MESSAGE_TERMINATOR
+            cmd = "delta:0.0,0.0," + str(dz) + ",0,0,0" + MESSAGE_TERMINATOR
+            #cmd = "delta:" + str(dx) + "," + str(dy) + "," + str(dz) + ",0,0,0" + MESSAGE_TERMINATOR
 
         return cmd
 
@@ -339,7 +347,7 @@ class XboxClient:
         if self.use_serial:
             self.logger("Serial Enabled. Looking for device on port {}".format(port))
             try:
-                s = serial.Serial(port=port, baudrate=baud, timeout=0.01)
+                s = serial.Serial(port=port, baudrate=baud, timeout=0.0)
                 s.write("led:0,100,0;".encode('utf8')) # Changes it to green
                 if s.is_open: self.logger("Device found. Successful connection using port {}".format(s.port))
             except:

@@ -43,7 +43,7 @@ if __name__ == "__main__":
     """ The RPI1040 processor ir pretty fast, but when combining analytical computations as well as string buffer 
     allocations, The method if receiving input commands will determine the robot controller update rate. 
     """
-    miniarm = MiniArm(port=1000, simulate_hardware=True, online=False, use_serial=True, verbose=True)
+    miniarm = MiniArm(port=1000, simulate_hardware=False, use_wifi=False, use_serial=True, verbose=False) 
     try:
         miniarm.start()        
     except KeyboardInterrupt:    

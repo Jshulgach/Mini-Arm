@@ -4,7 +4,7 @@ import ulab.numpy as np
 # Matrix mathematics dont seem to be as accurate as the symbolic math or numpy operations
 # on the PC. Small numbers are found in matrices instead of 0, which could be causing jumping
 # values from joint states. Setting an epsilon number will guarant matrix elements should be zero
-eps = 0.000001
+eps = 0.0001
 
 class Angle:
     """Angle class, used to store angle values in different units.
@@ -173,12 +173,54 @@ def TransformationMatrix(R, D):
     T = np.concatenate((temp, np.array([[0, 0, 0, 1]])), axis=0)
     return T
 
-def TransformationMatrixDH(theta, alpha, a, d):
+def AddisonTransformationMatrixDH(theta, alpha, a, d):
     """ Creates a homogenous transformation matrix of one joint frame with respect to the 
-        previous joint frame using the Denavit-Hartenberg convention.
+        previous joint frame using the Denavit-Hartenberg convention. Ues the exmple 
+        homogenous matrix structure from Angela Sodemann, referenced by Automatic Addison
         
         Building DH tables:
             https://automaticaddison.com/how-to-find-denavit-hartenberg-parameter-tables/
+            https://automaticaddison.com/coding-denavit-hartenberg-tables-using-python/    
+            
+    Parameters:
+    -----------
+    theta  : Angle from joint[i-1] to joint[i] around z[i-1]
+    alpha  : Angle from joint[i-1] to joint[i] around x[i]
+    a      : Distance between previous frame and current frame along x[i] direction
+    d      : Distance from x[i-1] to x[i] along the z[i-1] direction
+    
+    Return:
+    --------
+    T      : Numpy array with the homogenous transformation matrix
+    """
+    
+    t11 = np.cos(theta)
+    t12 = -np.sin(theta) * np.cos(alpha)
+    t13 = np.sin(theta) * np.sin(alpha)
+    t14 = a * np.cos(theta)
+    t21 = np.sin(theta)
+    t22 = np.cos(theta) * np.cos(alpha)
+    t23 = -np.cos(theta) * np.sin(alpha) 
+    t24 = a * np.sin(theta)
+    t31 = 0.000
+    t32 = np.sin(alpha)
+    t33 = np.cos(alpha)
+    t34 = d
+    T = np.array([[  t11,   t12,   t13,    t14],
+                  [  t21,   t22,   t23,    t24],
+                  [  t31,   t32,   t33,    t34],
+                  [0.000, 0.000, 0.000, 1.000]])
+    
+    # Enforce epsilon, operation implemented for 1D boolean array only
+    for i, row in enumerate(T):
+        T[i][abs(T[i]) < eps] = 0.00
+
+    return T
+    
+def TransformationMatrixDH(theta, alpha, a, d):
+    """ Creates a homogenous transformation matrix of one joint frame with respect to the 
+        previous joint frame using the Denavit-Hartenberg convention. Uses the structure from 
+        Mithi's arm-ik repository        
         
     Parameters:
     -----------
@@ -233,9 +275,9 @@ def rotationMatrixToEulerAngles(R):
         C2 = np.arctan2(R[1, 0] / np.cos(B2), R[0, 0] / np.cos(B2))
         
         # Enforce epsilon, operation implemented for 1D boolean array only
-        if A1 < eps: A1 = 0.000
-        if B1 < eps: B1 = 0.000
-        if C1 < eps: C1 = 0.000
+        if abs(A1) < eps: A1 = 0.000
+        if abs(B1) < eps: B1 = 0.000
+        if abs(C1) < eps: C1 = 0.000
 
         return [Angle(float(A1), "rad"), Angle(float(B1), "rad"), Angle(float(C1), "rad")]
     else:
@@ -248,9 +290,9 @@ def rotationMatrixToEulerAngles(R):
             A = -C + np.arctan2(-R[0, 1], -R[0, 2])
 
         # Enforce epsilon, operation implemented for 1D boolean array only
-        if A < eps: A = 0.000
-        if B < eps: B = 0.000
-        if C < eps: C = 0.000
+        if abs(A) < eps: A = 0.000
+        if abs(B) < eps: B = 0.000
+        if abs(C) < eps: C = 0.000
 
         return [Angle(float(A), "rad"), Angle(float(B), "rad"), Angle(float(C), "rad")]
 
@@ -419,8 +461,185 @@ def get_hypotenuse(a, b):
   return np.sqrt(a*a + b*b)
 
 def get_cosine_law_angle(a, b, c):    
-  cos_gamma = (a*a + b*b - c*c) / (2*a*b)
-  sin_gamma = np.sqrt(1 - cos_gamma * cos_gamma)
-  gamma = np.arctan2(sin_gamma, cos_gamma)
+    cos_gamma = (a*a + b*b - c*c) / (2*a*b)
+    sin_gamma = np.sqrt(1 - cos_gamma * cos_gamma)
+    gamma = np.arctan2(sin_gamma, cos_gamma)
+    return gamma
+  
+def dot_product_chain_of_matrices(matrices):
+    """Computes the dot product of a chain of matrices.
 
-  return gamma
+    Args:
+      matrices: A list of matrices.
+
+    Returns:
+      The dot product of the chain of matrices.
+    """
+    product = np.eye(matrices[0].shape[0])
+    for matrix in matrices:
+        product = np.dot(product, matrix)
+        
+    # Enforce epsilon, operation implemented for 1D boolean array only
+    for i, row in enumerate(product):
+        product[i][abs(product[i]) < eps] = 0.00
+        
+    return product
+    
+def eulToRotMat(theta1, theta2, theta3, order='xyz'):
+    """
+    input
+        theta1, theta2, theta3 = rotation angles in rotation order (degrees)
+        oreder = rotation order of x,y,z　e.g. XZY rotation -- 'xzy'
+    output
+        3x3 rotation matrix (numpy array)
+    """
+    c1 = 0.0 if abs(np.cos(theta1.rad * np.pi / 180)) < eps else np.cos(theta1.rad * np.pi / 180)
+    s1 = 0.0 if abs(np.sin(theta1.rad * np.pi / 180)) < eps else np.sin(theta1.rad * np.pi / 180)
+    c2 = 0.0 if abs(np.cos(theta2.rad * np.pi / 180)) < eps else np.cos(theta2.rad * np.pi / 180)
+    s2 = 0.0 if abs(np.sin(theta2.rad * np.pi / 180)) < eps else np.sin(theta2.rad * np.pi / 180)
+    c3 = 0.0 if abs(np.cos(theta3.rad * np.pi / 180)) < eps else np.cos(theta3.rad * np.pi / 180)
+    s3 = 0.0 if abs(np.sin(theta3.rad * np.pi / 180)) < eps else np.sin(theta3.rad * np.pi / 180)
+
+    if order == 'xzx':
+        matrix=np.array([[c2, -c3*s2, s2*s3],
+                         [c1*s2, c1*c2*c3-s1*s3, -c3*s1-c1*c2*s3],
+                         [s1*s2, c1*s3+c2*c3*s1, c1*c3-c2*s1*s3]])
+    elif order=='xyx':
+        matrix=np.array([[c2, s2*s3, c3*s2],
+                         [s1*s2, c1*c3-c2*s1*s3, -c1*s3-c2*c3*s1],
+                         [-c1*s2, c3*s1+c1*c2*s3, c1*c2*c3-s1*s3]])
+    elif order=='yxy':
+        matrix=np.array([[c1*c3-c2*s1*s3, s1*s2, c1*s3+c2*c3*s1],
+                         [s2*s3, c2, -c3*s2],
+                         [-c3*s1-c1*c2*s3, c1*s2, c1*c2*c3-s1*s3]])
+    elif order=='yzy':
+        matrix=np.array([[c1*c2*c3-s1*s3, -c1*s2, c3*s1+c1*c2*s3],
+                         [c3*s2, c2, s2*s3],
+                         [-c1*s3-c2*c3*s1, s1*s2, c1*c3-c2*s1*s3]])
+    elif order=='zyz':
+        matrix=np.array([[c1*c2*c3-s1*s3, -c3*s1-c1*c2*s3, c1*s2],
+                         [c1*s3+c2*c3*s1, c1*c3-c2*s1*s3, s1*s2],
+                         [-c3*s2, s2*s3, c2]])
+    elif order=='zxz':
+        matrix=np.array([[c1*c3-c2*s1*s3, -c1*s3-c2*c3*s1, s1*s2],
+                         [c3*s1+c1*c2*s3, c1*c2*c3-s1*s3, -c1*s2],
+                         [s2*s3, c3*s2, c2]])
+    elif order=='xyz':
+        matrix=np.array([[c2*c3, -c2*s3, s2],
+                         [c1*s3+c3*s1*s2, c1*c3-s1*s2*s3, -c2*s1],
+                         [s1*s3-c1*c3*s2, c3*s1+c1*s2*s3, c1*c2]])
+    elif order=='xzy':
+        matrix=np.array([[c2*c3, -s2, c2*s3],
+                         [s1*s3+c1*c3*s2, c1*c2, c1*s2*s3-c3*s1],
+                         [c3*s1*s2-c1*s3, c2*s1, c1*c3+s1*s2*s3]])
+    elif order=='yxz':
+        matrix=np.array([[c1*c3+s1*s2*s3, c3*s1*s2-c1*s3, c2*s1],
+                         [c2*s3, c2*c3, -s2],
+                         [c1*s2*s3-c3*s1, c1*c3*s2+s1*s3, c1*c2]])
+    elif order=='yzx':
+        matrix=np.array([[c1*c2, s1*s3-c1*c3*s2, c3*s1+c1*s2*s3],
+                         [s2, c2*c3, -c2*s3],
+                         [-c2*s1, c1*s3+c3*s1*s2, c1*c3-s1*s2*s3]])
+    elif order=='zyx':
+        matrix=np.array([[c1*c2, c1*s2*s3-c3*s1, s1*s3+c1*c3*s2],
+                         [c2*s1, c1*c3+s1*s2*s3, c3*s1*s2-c1*s3],
+                         [-s2, c2*s3, c2*c3]])
+    elif order=='zxy':
+        matrix=np.array([[c1*c3-s1*s2*s3, -c2*s1, c1*s3+c3*s1*s2],
+                         [c3*s1+c1*s2*s3, c1*c2, s1*s3-c1*c3*s2],
+                         [-c2*s3, s2, c2*c3]])
+
+    return matrix
+    
+def rotMatToEul(matrix, order='xyz'):
+    """
+    input
+        matrix = 3x3 rotation matrix (numpy array)
+        oreder(str) = rotation order of x, y, z : e.g, rotation XZY -- 'xzy'
+    output
+        theta1, theta2, theta3 = rotation angles in rotation order
+    """
+    r11, r12, r13 = matrix[0,0], matrix[0, 1], matrix[0, 2] #matrix[0]
+    r21, r22, r23 = matrix[1,0], matrix[1, 1], matrix[1, 2] #matrix[1]
+    r31, r32, r33 = matrix[2,0], matrix[2, 1], matrix[2, 2] #matrix[2]
+
+    if order == 'xzx':
+        theta1 = np.atan(r31 / r21)
+        theta2 = np.atan(r21 / (r11 * np.cos(theta1)))
+        theta3 = np.atan(-r13 / r12)
+
+    elif order == 'xyx':
+        theta1 = np.arctan2(-r21 / r31)
+        theta2 = np.arctan2(-r31 / (r11 *np.cos(theta1)))
+        theta3 = np.arctan2(r12 / r13)
+
+    elif order == 'yxy':
+        theta1 = np.arctan2(r12 / r32)
+        theta2 = np.arctan2(r32 / (r22 *np.cos(theta1)))
+        theta3 = np.arctan2(-r21 / r23)
+
+    elif order == 'yzy':
+        theta1 = np.arctan2(-r32 / r12)
+        theta2 = np.arctan2(-r12 / (r22 *np.cos(theta1)))
+        theta3 = np.arctan2(r23 / r21)
+
+    elif order == 'zyz':
+        theta1 = np.arctan2(r23 / r13)
+        theta2 = np.arctan2(r13 / (r33 *np.cos(theta1)))
+        theta3 = np.arctan2(-r32 / r31)
+
+    elif order == 'zxz':
+        theta1 = np.arctan2(-r13 / r23)
+        theta2 = np.arctan2(-r23 / (r33 *np.cos(theta1)))
+        theta3 = np.arctan2(r31 / r32)
+
+    elif order == 'xzy':
+        theta1 = np.atan(r32 / r22)
+        theta2 = np.atan(-r12 * np.cos(theta1) / r22)
+        theta3 = np.atan(r13 / r11)
+
+    elif order == 'xyz':
+        if (r31 != 1 and r31 != -1):
+            theta1 = np.atan(-r23 / r33)
+            theta2 = np.atan(r13 * np.cos(theta1) / r33)
+            theta3 = np.atan(-r12 / r11)
+        else:
+            theta3 = 0.0
+            if (r31 == -1):
+                theta2 = np.pi / 2.0
+                theta1 = theta3 + np.arctan2(r12, r13)
+            else:
+                theta2 = -np.pi / 2.0
+                theta1 = -theta3 + np.arctan2(-r12, -r13)
+
+    elif order == 'yxz':
+        theta1 = np.arctan2(r13 / r33)
+        theta2 = np.arctan2(-r23 * np.cos(theta1) / r33)
+        theta3 = np.arctan2(r21 / r22)
+
+    elif order == 'yzx':
+        theta1 = np.arctan2(-r31 / r11)
+        theta2 = np.arctan2(r21 * np.cos(theta1) / r11)
+        theta3 = np.arctan2(-r23 / r22)
+
+    elif order == 'zyx':
+        theta1 = np.arctan2(r21 / r11)
+        theta2 = np.arctan2(-r31 * np.cos(theta1) / r11)
+        theta3 = np.arctan2(r32 / r33)
+
+    elif order == 'zxy':
+        theta1 = np.arctan2(-r12 / r22)
+        theta2 = np.arctan2(r32 * np.cos(theta1) / r22)
+        theta3 = np.arctan2(-r31 / r33)
+
+    theta1 = theta1 * 180 / np.pi
+    theta2 = theta2 * 180 / np.pi
+    theta3 = theta3 * 180 / np.pi
+    
+    if abs(theta1) < eps: theta1 = 0.000
+    if abs(theta2) < eps: theta2 = 0.000
+    if abs(theta3) < eps: theta3 = 0.000
+
+
+    return [Angle(float(theta1), "rad"), Angle(float(theta2), "rad"), Angle(float(theta3), "rad")]
+    

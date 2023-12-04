@@ -16,14 +16,14 @@ from arm_utils.force_sensor import ForceSensor
 from arm_utils.usbserialreader import USBSerialReader
 
 __author__ = "Jonathan Shulgach"
-__version__ = "1.0.1"
+__version__ = "1.4.1"
 
 MAXBUF = 512
 MAXSTEP = 101
 COMMAND_DELIMITER = ";"  # multiple commands should be parsed too
 ARGUMENT_DELIMITER = ":" # expecting arguements to be spaced
 QUEUE_BUFFER = 10       # Maximum number of commands to hold
-
+USE_UART = True          # Swap between using the console and the U
 CIRCULAR_TEST = False
 
 from arm_utils.armTransforms import create_circular_trajectory
@@ -64,7 +64,11 @@ class AsyncController:
         self.use_serial = use_serial
         self.verbose = verbose
         
+        self.verbose = False # OVERWRITE
+        #simulate_hardware = 
+        
         # Internal parameters
+        #self.update_rate = 0
         self.counter = 0
         self.connected = False
         self.queue = []
@@ -74,8 +78,11 @@ class AsyncController:
         
         # Create robot
         self.robot = RobotArm(simulate_hardware=simulate_hardware, verbose=self.verbose)
-        self.robot.dh = robot_models.kuka_params
+        
+        # Load robot model
         self.robot.dh = robot_models.miniarm_params
+        #self.robot.dh = robot_models.kuka_params
+        
         self.robot.forward_kinematics()  # update self.config with new values.
         
         # Create objects for the RGB LED, the music player, and the FRSs on the gripper
@@ -86,9 +93,14 @@ class AsyncController:
         # Establish peripheral connection types
         if self.use_wifi: 
             self.server = self.connect_to_wifi()        
+
         if self.use_serial:
-            self.usb_serial = USBSerialReader(';', verbose=self.verbose)
+            self.usb_serial = USBSerialReader(use_UART=True,
+                                              TERMINATOR=';',
+                                              verbose=self.verbose,
+                                              )
             
+
         if self.verbose: self.logger("{} object created!".format(self.name))
         
         # Display current robot state
@@ -138,27 +150,50 @@ class AsyncController:
                 
                 # To check the actual update rate in which the controller is performing at, enable the lines below:
                 #if self.verbose: print("{}".format(1/(time.monotonic()-self.prev_t)))
+                #self.update_rate = 1/(time.monotonic()-self.prev_t)
                 #self.prev_t = time.monotonic()
                 
                 
-            #self.robot.set_joints([0, 0, 0, 0, 90, 0])
-            #self.robot.direct_kinematics()
-            #self.robot.robotinfo()
-            #self.robot.helper_direct_kinematics([0, 0, 0, 0, 0, 0], [185, 0, 215], [0, 90, 0])
-            #self.robot.helper_direct_kinematics([1.01249809, -0.27580036, -0.11568865, 1.63446527, 1.52050003, -0.81578131], 
-            #                                    [0.49792, 1.3673, 2.4988], # pose
-            #                                    [0.366, -0.078, 2.561]) # euler angles
-            #self.robot.helper_inverse_kinematics([1.01249809, -0.27580036, -0.11568865, 1.63446527, 1.52050003, -0.81578131], 
-            #                                    [0.49792, 1.3673, 2.4988], # pose
-            #                                    [0.366, -0.078, 2.561]) # euler angles
-            #self.robot.helper_inverse_kinematics([0.00,0.00,0.00,0.00,0.00,0.00], 
-            #                                    [2.153, 0.00, 1.946], # pose
-            #                                    [0.00, 0.00, 0.00]) # euler angles
+            # MINIARM
             #self.robot.helper_forward_kinematics([0.00000,0.00000,0.00000,0.00000,0.00000,0.00000], 
-            #                                     [2.1530, 0.0000, 1.9460], # pose
+            #                                     [0.1350, 0.0000, 0.2150], # pose
             #                                     [0.0000, 0.0000, 0.0000]) # euler angles
-            #self.robot.helper_inverse_kinematics([0, 0, 0, 0, 0, 0], [185, 0, 215], [0, 90, 0])
-            #self.robot.helper_inverse_kinematics([1.015, -0.2758, -0.1157, 1.6345, 1.5205, -0.8158], [0.49792, 1.3673, 2.4988], [0.366, -0.078, 2.561])
+            #self.robot.helper_inverse_kinematics([0.00,0.00,0.00,0.00,0.00,0.00], 
+            #                                     [0.135, 0.00, 0.215], # pose
+            #                                     [0.00, 0.00, 0.00]) # euler angles                                                 
+            #self.robot.helper_inverse_kinematics([-5.04872683e-17,  1.77628832e-01,  5.23401762e-01, -1.72568299e-16, -7.01030594e-01,  3.53840963e-17,  3.53840963e-17],
+            #                                     [0.135, 0.00, 0.155],
+            #                                     [0.00, 0.00, 0.00])
+            #self.robot.helper_inverse_kinematics([-2.80746871e-17,  2.83554572e-01,  2.82139363e-04,  2.85740847e-19,  1.28606746e+00, -1.35783164e-17, -1.35783164e-17],
+            #                                     [0.135, 0.00, 0.155],
+            #                                     [0.00,-1.57,0.00])                                                                                                 
+            #self.robot.helper_forward_kinematics([0.00000,0.00000,-np.pi/2,0.00000,0.00000,0.00000], 
+            #                                     [0.015, 0.0000, 0.275], # pose
+            #                                     [0.0000, -np.pi/2, 0.0000]) # euler angles
+            #self.robot.helper_inverse_kinematics([0.00,0.00,-np.pi/2,0.00,0.00,0.00], 
+            #                                    [0.015, 0.00, 0.275], # pose
+            #                                    [0.00, -np.pi/2, 0.00]) # euler angles
+            
+            # KUKA (all pass with kuka_params)
+            #self.robot.helper_forward_kinematics([0.00,0.00,0.00,0.00,0.00,0.00], 
+            #                                     [2.153, 0.0000, 1.946], # pose # using the KUKA ARM
+            #                                     [0.0000, 0.0000, 0.0000]) # euler angles
+            #self.robot.helper_inverse_kinematics([0.00,0.00,0.00,0.00,0.00,0.00], 
+            #                                     [2.153, 0.00, 1.946], # pose
+            #                                     [0.00, 0.00, 0.00]) # euler angles
+            #self.robot.helper_forward_kinematics([1.01249809363771,  -0.275800363737724,  -0.115686651053751, 1.63446527240323,  1.52050002599430, -0.815781306199679],
+            #                                     [0.49792,1.3673,2.4988],
+            #                                     [0.366, -0.078, 2.561])
+            #self.robot.helper_inverse_kinematics([1.01249809363771,  -0.275800363737724,  -0.115686651053751, 1.63446527240323,  1.52050002599430, -0.815781306199679],
+            #                                     [0.49792,1.3673,2.4988],
+            #                                     [0.366, -0.078, 2.561])
+            #self.robot.helper_forward_kinematics([-0.0682697289101386, 0.434273483083027, -1.13476160607020, 0.206486955261342, 0.604353673052791, -0.0272724984420472],
+            #                                     [2.3537, -0.1255546, 2.841452],
+            #                                     [0.131008, -0.10541, 0.0491503])
+            #self.robot.helper_inverse_kinematics([-0.0682697289101386, 0.434273483083027, -1.13476160607020, 0.206486955261342, 0.604353673052791, -0.0272724984420472],
+            #                                     [2.3537, -0.1255546, 2.841452],
+            #                                     [0.131008, -0.10541, 0.0491503])
+            
             #await self.queue_msg('pose ' + str(1755 + self.counter) + ',0,2660,0,0,0')
             #await self.queue_msg('delta 0,0,-1,0,0,0')
             #self.counter -= 1  
@@ -167,11 +202,12 @@ class AsyncController:
             await asyncio.sleep(1 / int(interval))
             #await asyncio.sleep(0) # handle this as fast as possible compared to the other coroutines           
         self.logger("Updating stopped")
+        
 
-    async def parse_command(self, msg):
+    async def parse_command(self, msg_list):
         if self.verbose: self.logger("Parsing command")
         #try:
-        if True:
+        for msg in msg_list:
             cmd = msg[0]
             if cmd == 'test':
                 # =====================================================================================
@@ -249,7 +285,7 @@ class AsyncController:
                 # =====================================================================================
                 # Set joint positions to initial position
                 # =====================================================================================
-                self.robot.set_joints([0.00,0.00,0.00,0.00,0.00,0.00])
+                self.robot.set_joints([90.00,90.00,45.00,90.00,90.00,90.00])
                 
             elif cmd == 'fsr':
                 # =====================================================================================
@@ -262,6 +298,15 @@ class AsyncController:
                 # Turn on or off the verbose output
                 # =====================================================================================
                 await self.set_verbose_mode(msg)
+                
+            elif cmd == 'ping':
+                # =====================================================================================
+                # Simple ping command to send a byte to the connected
+                # =====================================================================================
+                #print(cmd)
+                self.usb_serial.send('pong')
+                #self.usb_serial.serial.write('pong'.encode("utf-8"))
+                #print("pong sent")
             
             else:
                 self.logger("Unknown command received: '{}'".format(cmd))
@@ -275,6 +320,8 @@ class AsyncController:
         self.logger("\n=================================== Robot Info ===================================")
         self.robot.robotinfo()
         self.read_fsr()
+        self.logger("Simulated hardware: {}".format(self.robot.simulate_hardware))
+        self.logger("Verbose output: {}".format(self.verbose))
         self.logger("\n==================================================================================")
         
     async def movemotor(self, cmd):
@@ -287,6 +334,7 @@ class AsyncController:
         elif len(cmd) < 3:
             self.logger("'movemotor' command and motor index received, missing motor angle (ex: 90)")
         else:    
+            cmd[2] = cmd[2].replace(';','')
             self.robot.set_joint(int(cmd[1]), int(cmd[2]))
             
     async def movemotors(self, cmd):
@@ -297,11 +345,13 @@ class AsyncController:
         if len(cmd) < 2:
             self.logger("'movemotors' command received, but missing array of joint states (ex: [10, 10, 0, 0, 10, 10])")
         else:
-            try:
+            #try:
+            if True:
                 vals_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",")
                 self.robot.set_joints([float(i) for i in vals_str])
-            except:
-                self.logger("'movemotors' aray input received, (ex: [10, 10, 0, 0, 10, 10])")
+                #self.robot.set_joints_speed_control([float(i) for i in vals_str])
+            #except:
+            #    self.logger("'movemotors' aray input received, (ex: [10, 10, 0, 0, 10, 10])")
 
     async def movegripper(self, cmd):
         """ Function that handles a command that updates all robot motors by the order values are received
@@ -312,6 +362,7 @@ class AsyncController:
             self.logger("'gripper' command received, missing angle (ex: 90)")
         else:
             try: 
+                cmd[1] = cmd[1].replace(';','')
                 val = int(float(cmd[1])) # convert string to float before converting to int
                 self.robot.set_gripper(val)
             except: 
@@ -384,9 +435,13 @@ class AsyncController:
         if len(cmd) < 2:
             self.logger("Missing LED RGB data. Send data as array of values from 0-255 (ex: [0, 0, 100])")
         else:
-            rgb_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",")
+            rgb_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").replace(";","").split(",")
+            #print(rgb_str)
             rgb_val = list(map(int, rgb_str))
             self.rgb.set_color(rgb_val)
+            #time.sleep(0.2)
+            #self.rgb.all_off()
+            #self.logger('all off')
 
     async def set_verbose_mode(self, cmd):
         """ Enable/disable the verbose output by setting the attribute to true or false

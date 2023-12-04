@@ -1,0 +1,19 @@
+<package format="2">
+  <name>miniarm_resources</name>
+  <version>1.0.0</version>
+  <description>
+    <p>URDF Description package for the MiniArm</p>
+    <p>This package contains configuration data, 3D models and launch files
+for MiniArm robot</p>
+  </description>
+  <author>Jonathan Shulgach</author>
+  <maintainer email="jonathan@shulgach.com" />
+  <license>BSD</license>
+  <depend>robot_state_publisher</depend>
+  <depend>rviz</depend>
+  <depend>joint_state_publisher_gui</depend>
+  <depend>gazebo</depend>
+  <export>
+    <architecture_independent />
+  </export>
+</package>

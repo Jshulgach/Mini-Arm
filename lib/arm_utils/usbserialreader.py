@@ -48,8 +48,8 @@ class USBSerialReader(object):
         # Decode the bytes currently stored in the buffer
         temp = self._out_data.decode("utf-8")
         
-        # If a newline character exists anywhere, those are not being parsed so we will remove them
-        temp  = temp.replace('\n','').replace('\r','')
+        # If a newline,return, or backspace character exists anywhere, those are not being parsed so we will remove them
+        temp  = temp.replace('\n','').replace('\r','').replace('\b','')
         
         # Check if multiple commands were sent by splitting the message by the command delimiter
         cmds = temp.split(self.command_delimiter)

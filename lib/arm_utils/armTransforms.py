@@ -456,6 +456,16 @@ def create_circular_trajectory(center, radius=10, steps=101):
     theta = np.linspace(0, 2*np.pi, steps)
     temp = np.array([np.zeros(len(theta)), np.cos(theta), np.sin(theta)]).transpose()
     return center + radius*temp
+
+def create_vertical_trajectory(center, radius=10, steps=101):
+    theta = np.linspace(0, 2*np.pi, steps)
+    temp = np.array([np.zeros(len(theta)), np.zeros(len(theta)), np.sin(theta)]).transpose()
+    return center + radius*temp
+
+def create_depth_trajectory(center, radius=10, steps=101):
+    theta = np.linspace(0, 2*np.pi, steps)
+    temp = np.array([np.cos(theta), np.zeros(len(theta)), np.zeros(len(theta))]).transpose()
+    return center + radius*temp
     
 def get_hypotenuse(a, b):
   return np.sqrt(a*a + b*b)

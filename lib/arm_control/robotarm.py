@@ -6,7 +6,7 @@ from adafruit_servokit import ServoKit
 from arm_utils.armTransforms import *
 
 __author__ = "Jonathan Shulgach"
-__version__ = "1.4.1"
+__version__ = "1.4.2"
 __HOME__   = [0, 32,  0, 90, 15, 90] # Home position from AJ Unity GUI 12/3/23
 __IKHOME__ = [0,  0,  0,  0,  0,  0] # IK transformations 
 
@@ -74,6 +74,7 @@ class RobotArm(object):
         self.reference_pos = None
 
         # Create references to the servo hardware
+        self.servos = None
         if not self.simulate_hardware:
             # necessary to create the custom busio.I2C object instead of the ServoKit default due to some dormant library issue 
             i2c = busio.I2C(board.GP1, board.GP0)
@@ -336,12 +337,7 @@ class RobotArm(object):
     
             angles = self.inverse_kinematics(config_msg)
             #print("output:       {}".format([i.deg for i in angles]))
-            
-            #if len(target_pos)>3:
-            #    config_msg = Config(target_pos[:3], angle_list(target_pos[3:6], "deg"))
-            #else:
-            #    #angles = [x.deg for x in self.config.euler_angles]
-            #    config_msg = Config(target_pos[:3], angle_list(angles, "deg"))
+
                 
             #self.angles = self.inverse_kinematics(config_msg)
             
@@ -365,23 +361,14 @@ class RobotArm(object):
             
             #if self.verbose: self.logger("Calculated angles: {}".format(self.get_joints()))
             print("servo values: {}".format([angles[i].deg + self.joint_offsets[i] for i in range(0,6)]))
-                
-            for i in range(0,6):
-            
-                servo_val = angles[i].deg + self.joint_offsets[i]
-                
-                #if i in range(1,3):
-                #    servo_val = self.joint_offsets[i] - angles[i].deg
-                #servo_val = 180-servo_val if self.pose_flip[i] else servo_val
-                self.update_servo(ServoIndex(i+1), servo_val)
 
-            #self.set_joints([i.deg for i in angles])
-            #if len(target_pos) > 6: self.set_gripper(target_pos[6])
+            if not self.simulate_hardware:
+                for i in range(0,6):
             
+                    servo_val = angles[i].deg + self.joint_offsets[i]
+                    self.update_servo(ServoIndex(i+1), servo_val)
 
-        #except:
-        #    if self.verbose: self.logger("Error in setting pose. Check values are of float type and IK solver has no issues")
-                
+
     def get_pose(self): 
         """ Gets the current end-effector pose 
         """

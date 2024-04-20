@@ -16,7 +16,7 @@ from arm_utils.force_sensor import ForceSensor
 from arm_utils.usbserialreader import USBSerialReader
 
 __author__ = "Jonathan Shulgach"
-__version__ = "1.4.1"
+__version__ = "1.4.2"
 
 MAXBUF = 512
 MAXSTEP = 101
@@ -24,7 +24,7 @@ COMMAND_DELIMITER = ";"  # multiple commands should be parsed too
 ARGUMENT_DELIMITER = ":" # expecting arguements to be spaced
 QUEUE_BUFFER = 10        # Maximum number of commands to hold
 USE_UART = False         # Swap between using the console and the UART
-CIRCULAR_TEST = False
+CIRCULAR_TEST = True
 
 from arm_utils.armTransforms import (
     create_circular_trajectory, 
@@ -68,7 +68,7 @@ class AsyncController(object):
         self.port = port
         self.rate = rate
         #self.simulate_hardware = simulate_hardware
-        self.simulate_hardware = False
+        self.simulate_hardware = True
         #self.speed_control = speed_control
         self.speed_control = True
         self.use_wifi = use_wifi

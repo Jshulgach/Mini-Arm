@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     # Specify the ip address to connect to
     ip = '192.168.1.165'
-    client = XboxClient(ip=ip, serialport='COM7', rate=10, simulate=False, online=False, use_serial=True, verbose=True)
+    client = XboxClient(ip=ip, serialport='COM5', rate=10, simulate=False, online=False, use_serial=True, verbose=False)
     try:
         client.start()
         while True:

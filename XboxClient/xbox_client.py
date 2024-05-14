@@ -61,7 +61,7 @@ class XboxClient:
                  ip='192.168.1.165',  # for the dedicated dns once it goes back up: 'desktoparm.ddns.net'
                  serialport='COM5',
                  baudrate=115200,
-                 rate=10,
+                 rate=2,
                  simulate=False,
                  online=False,
                  use_serial=True,
@@ -153,7 +153,7 @@ class XboxClient:
         # asyncio.create_task(self.helper_queue_msgs(50))  # 50
 
         self.logger("Setting up robot update rate")
-        asyncio.create_task(self.update(5))
+        asyncio.create_task(self.update(10))
 
         self.logger("{} running!".format(self.name))
 
@@ -191,8 +191,8 @@ class XboxClient:
                 # Get FSR Readings
                 #cmd = "fsr;"                
                 #self.usb_serial.write(cmd.encode('utf8'))
-                if i > 5:
-                    self.usb_serial.write("robotinfo;".encode('utf8'))
+                if i > 50:
+                    self.usb_serial.write("info;".encode('utf8'))
                     i=0
                 i = i + 1
                     
@@ -211,7 +211,7 @@ class XboxClient:
         cmd = None
         data = self.xbox.read()
         if data[XBOX_MAP['Start']] > 0:
-            cmd = "home" + MESSAGE_TERMINATOR
+            cmd = "ikhome" + MESSAGE_TERMINATOR
         return cmd
 
     def check_gripper(self):
@@ -269,7 +269,8 @@ class XboxClient:
             dz = -gain * float(data[XBOX_MAP['LeftBumper']])
        
         if any((dx, dy, dz)):       
-            cmd = "delta:0.0,0.0," + str(dz) + ",0,0,0" + MESSAGE_TERMINATOR
+            cmd = "delta:0.0,0.0," + str(dz) + MESSAGE_TERMINATOR
+            #cmd = "delta:0.0,0.0," + str(dz) + ",0,0,0" + MESSAGE_TERMINATOR
             #cmd = "delta:" + str(dx) + "," + str(dy) + "," + str(dz) + ",0,0,0" + MESSAGE_TERMINATOR
 
         return cmd

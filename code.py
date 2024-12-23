@@ -35,22 +35,25 @@
       Blog with Asyncio library help: https://leimao.github.io/blog/Python-AsyncIO-Asynchronous-IO/#Asynchronous-Read
 """
 
-# Warning: enabling verbose puts strain on the controller, and it makes the update routine run at 10Hz.
-
 from arm_control.async_controller import AsyncController as MiniArm
 
 # Before creating the MiniArm object, we can set up some RP2040 properties
 # We will change the default processor speed from 125MHz to 200MHz (Overclock)
 # Note: This is only possible with versions of CircuitPython over 8.1.0
-import microcontroller
-microcontroller.cpu.frequency = 200000000  # 200MHz
+#import microcontroller
+#microcontroller.cpu.frequency = 200000000  # 200MHz
 
         
 if __name__ == "__main__":
-    """ The RPI1040 processor ir pretty fast, but when combining analytical computations as well as string buffer 
+    """ The RPI2040 processor ir pretty fast, but when combining analytical computations as well as string buffer 
     allocations, The method if receiving input commands will determine the robot controller update rate. 
     """
-    miniarm = MiniArm('Controller', simulate_hardware=False, use_serial=True, speed_control=True, verbose=False)  
+    miniarm = MiniArm('Controller', 
+                      simulate_hardware=True, 
+                      use_serial=True, 
+                      speed_control=False,
+                      verbose=True,
+                      )  
     try:
         miniarm.start()        
     except KeyboardInterrupt:    

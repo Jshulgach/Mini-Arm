@@ -21,6 +21,7 @@ class USBSerialReader(object):
     def __init__(self, 
                  name="USBSerialReader",
                  use_UART=True, # If false, uses console
+                 baudrate=9600,
                  TERMINATOR='\r', 
                  COMMAND_DELIMITER=";",  # multiple commands should be parsed too
                  ARGUMENT_DELIMITER=":",
@@ -29,7 +30,7 @@ class USBSerialReader(object):
         self.name = name
         self.use_UART = use_UART
         if self.use_UART:
-            self.serial  = busio.UART(board.GP16, board.GP17, baudrate=9600, timeout=0)
+            self.serial  = busio.UART(board.GP16, board.GP17, baudrate=baudrate, timeout=0)
         else:
             self.serial = usb_cdc.console
 

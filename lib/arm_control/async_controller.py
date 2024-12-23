@@ -1,6 +1,6 @@
 
 import os
-import wifi
+#import wifi # Pico 2 doesn't have wifi yet
 import time
 import board
 import asyncio
@@ -15,27 +15,19 @@ from arm_control.robotarm import RobotArm
 from arm_utils.force_sensor import ForceSensor
 from arm_utils.usbserialreader import USBSerialReader
 
+from arm_utils.armTransforms import create_circular_trajectory as circ_traj
+#from arm_utils.armTransforms import create_vertical_trajectory as vert_traj 
+#from arm_utils.armTransforms import create_depth_trajectory as depth_traj
+
 __author__ = "Jonathan Shulgach"
-__version__ = "1.4.2"
+__version__ = "1.4.3"
 
 MAXBUF = 512
-MAXSTEP = 101
-COMMAND_DELIMITER = ";"  # multiple commands should be parsed too
-ARGUMENT_DELIMITER = ":" # expecting arguements to be spaced
 QUEUE_BUFFER = 10        # Maximum number of commands to hold
-USE_UART = True         # Swap between using the console and the UART
-CIRCULAR_TEST = False
 
-from arm_utils.armTransforms import (
-    create_circular_trajectory, 
-    create_vertical_trajectory, 
-    create_depth_trajectory)
-    
-points = create_circular_trajectory([0.135, 0.000, 0.225], 0.05, MAXSTEP) # draw a circle
-vertical_points = create_vertical_trajectory([0.135, 0.000, 0.180], 0.04, MAXSTEP) # like a squished circle
-depth_points = create_depth_trajectory([0.1925, 0.000, 0.124], 0.05, MAXSTEP) # like a squished circle
-euler = np.array([0.000,np.pi/2,0.000]) # keep same orientation for all points
-
+#points = create_circular_trajectory([0.135, 0.000, 0.225], 0.05, MAXSTEP) # draw a circle
+#vertical_points = create_vertical_trajectory([0.135, 0.000, 0.180], 0.04, MAXSTEP) # like a squished circle
+#depth_points = create_depth_trajectory([0.1925, 0.000, 0.124], 0.05, MAXSTEP) # like a squished circle
     
 class AsyncController(object):
     """This is the object that handles serial command inputs and directs the servo positions
@@ -50,6 +42,7 @@ class AsyncController(object):
         simulate_hardware : (bool)    Allow physical control of hardware
         use_wifi          : (bool)    Enable/Disable server
         use_serial        : (bool)    Enable/Disable serial command parsing
+        use_uart          : (bool)    Enable/Disable UART messasing with usb port. False requires using UART pins
         speed_control     : (bool)    Enable/Disable smooth robot joint setting
         verbose           : (bool)    Enable/disable verbose output text to the terminal
     """    
@@ -60,7 +53,9 @@ class AsyncController(object):
                        simulate_hardware=False, 
                        use_wifi=False, 
                        use_serial=False, 
+                       use_uart=False,
                        speed_control=False,
+                       command_delimiter=";",
                        verbose=False,
                        ):
         self.name = name
@@ -70,14 +65,17 @@ class AsyncController(object):
         self.simulate_hardware = simulate_hardware
         self.use_wifi = use_wifi
         self.use_serial = use_serial
+        self.use_uart = use_uart
         self.speed_control = speed_control
+        self.command_delimiter = command_delimiter
         self.verbose = verbose
         
         # Internal parameters
         self.counter = 0
         self.connected = False
         self.queue = []
-        self.all_stop = False
+        self.all_stop = False # Flag for running main threads
+        self.run_traj = False # Flag for running trajectories
         self.stop_after_disconnect = False
         self.prev_t = 0
         
@@ -97,28 +95,21 @@ class AsyncController(object):
         self.fsr = {'Left':ForceSensor(board.A0), 'Right':ForceSensor(board.A2)}
         
         # Establish peripheral connection types
-        if self.use_wifi: 
-            self.server = self.connect_to_wifi()        
-
-        if self.use_serial:
-            self.usb_serial = USBSerialReader(use_UART=USE_UART,
-                                              TERMINATOR=COMMAND_DELIMITER,
-                                              verbose=self.verbose)
-
-        if self.verbose: self.logger("{} object created!".format(self.name))
+        if self.use_wifi: self.server = self.connect_to_wifi()        
+        if self.use_serial: self.serial = USBSerialReader(use_UART=self.use_uart, TERMINATOR=self.command_delimiter, verbose=self.verbose)
         
-        # Display current robot state
-        if self.verbose: self.display_robotinfo()
+        self.logo() # Show awesome logo
+        #if self.verbose: self.logger("{} object created!".format(self.name))
+        if self.verbose: self.display_robotinfo() # Display current robot state
 
             
     def logger(self, *argv, warning=False):
-    
+        """ Robust printing function to log events"""
         msg = ''.join(argv)
         if self.robot.warning or warning: msg = '(Warning) ' + msg
         print("[{:.3f}][{}] {}".format(time.monotonic(), self.name, msg))
         if self.robot.warning or warning: self.rgb.set_color([50,50,0]) # Yellow
 
-  
     async def main(self):
         """ Start main tasks and coroutines in a single main function """        
         if self.use_serial:
@@ -131,7 +122,7 @@ class AsyncController(object):
             asyncio.create_task(asyncio.start_server(self.serve_client, str(wifi.radio.ipv4_address), self.port))
         
         # Helper routine to keep publishing messages to the queue instead of waiting on a client, disable after debug
-        if CIRCULAR_TEST: asyncio.create_task( self.helper_queue_msgs( 2 ) )  # 50
+        #if CIRCULAR_TEST: asyncio.create_task( self.helper_queue_msgs( 100 ) )  # 50
         
         # Start main routine
         if self.verbose: self.logger("Setting up robot update rate")
@@ -147,27 +138,8 @@ class AsyncController(object):
             depending on the command type.
         """
         while self.all_stop != True:
-            # Using the queue list is more efficient but takes more time. Uncomment below to 
-            # wait for messages to be dequeued before parsing them
-            if len(self.queue)>0:
-                msg = self.dequeue_msg()
-                if self.verbose: self.logger("Reading {} from list".format(msg))
-                await self.parse_command([msg])
-            
-            # Waiting for serial commands directly instead of queueing them will be faster
-            # ========== temporary testing ===========
-                #pose = np.concatenate((msg, euler), axis=0) 
-                #print("pose to send: {}".format(pose))
-                #self.robot.set_pose(pose)
-                #self.robot.robotinfo()
-                
-                # To check the actual update rate in which the controller is performing at, enable the lines below:
-                print("{}".format(1/(time.monotonic()-self.prev_t)))
-                self.update_rate = 1/(time.monotonic()-self.prev_t)
-                self.prev_t = time.monotonic()
-                
-                
-            # MINIARM
+                                
+            # MINIARM debug commands. Uncomment below to see the FK/IK calculation checks
             #self.robot.helper_forward_kinematics([0.00000,0.00000,0.00000,0.00000,0.00000,0.00000], 
             #                                     [0.1350, 0.0000, 0.2150], # pose
             #                                     [0.0000, 0.0000, 0.0000]) # euler angles
@@ -187,7 +159,7 @@ class AsyncController(object):
             #                                    [0.015, 0.00, 0.275], # pose
             #                                    [0.00, -np.pi/2, 0.00]) # euler angles
             
-            # KUKA (all pass with kuka_params)
+            # KUKA debug commands. Uncomment below to see the FK/IK calculation checks (adjust dh params with kuka params) 
             #self.robot.helper_forward_kinematics([0.00,0.00,0.00,0.00,0.00,0.00], 
             #                                     [2.153, 0.0000, 1.946], # pose # using the KUKA ARM
             #                                     [0.0000, 0.0000, 0.0000]) # euler angles
@@ -206,149 +178,73 @@ class AsyncController(object):
             #self.robot.helper_inverse_kinematics([-0.0682697289101386, 0.434273483083027, -1.13476160607020, 0.206486955261342, 0.604353673052791, -0.0272724984420472],
             #                                     [2.3537, -0.1255546, 2.841452],
             #                                     [0.131008, -0.10541, 0.0491503])
+                            
+            # Adding commands to the queue list is the more efficient method to command the robot but it takes more time.
+            # This could be a performance bottleneck if the microcontroller isn't able to handle the necessary speeds; in 
+            # which case sending serial commands to the robot directly works fastest 
+            if len(self.queue)>0:
+                msg = self.dequeue_msg()
+                if self.verbose: self.logger("Reading {} from list".format(msg))
+                await self.parse_command([msg])
             
-            #await self.queue_msg('pose ' + str(1755 + self.counter) + ',0,2660,0,0,0')
-            #await self.queue_msg('delta 0,0,-1,0,0,0')
-            #self.counter -= 1  
-            
-                
-            # =================================================
+                # Uncomment below to see the speed in which the command parser can run at:
+                #print("{}".format(1/(time.monotonic()-self.prev_t)))
+                #self.update_rate = 1/(time.monotonic()-self.prev_t)
+                #self.prev_t = time.monotonic()
+                            
                
             await asyncio.sleep(1 / int(interval))
             #await asyncio.sleep(0) # handle this as fast as possible compared to the other coroutines           
-        self.logger("Updating stopped")
+        self.logger("Main loop exited")
         
-
     async def parse_command(self, msg_list):
-        #if self.verbose: self.logger("Parsing command")
         self.robot.warning = False
         for msg in msg_list:
-            if True:
-            #try:
+            try:
                 cmd = msg[0]
-                if cmd == 'test':
-                    # =====================================================================================
-                    # Simple test output
-                    # =====================================================================================
-                    self.logger('Testing 123', warning=True)
-                
-                elif cmd == 'movemotor':
-                    # =====================================================================================
-                    # single motor movement
-                    # =====================================================================================
-                    await self.movemotor(msg)
-                
-                elif cmd == 'movemotors':
-                    # =====================================================================================
-                    # multiple motor movement
-                    # =====================================================================================
-                    await self.movemotors(msg)
+                msg = [m.replace(';','') for m in msg] # Remove ';' from all parts of the message
 
-                elif cmd == 'info':
-                    # =====================================================================================
-                    # Get the information of the robot
-                    # =====================================================================================
-                    self.display_robotinfo()
-
-                elif cmd == 'gripper':
-                    # =====================================================================================
-                    # Set gripper to specified angle
-                    # =====================================================================================
-                   await self.movegripper(msg)
-     
-                elif cmd == 'pose':
-                    # =====================================================================================
-                    # absolute cartesian position (in the form of [x, y, z, roll, pitch, yaw])
-                    # =====================================================================================
-                    await self.set_pose(msg)
-
-                elif cmd == 'delta':
-                    # =====================================================================================
-                    # Relative cartesian position step(in the form of [x, y, z, roll, pitch, yaw])
-                    # =====================================================================================
-                    await self.set_delta(msg)
-                
-                elif cmd == 'posture':
-                    # =====================================================================================
-                    # Relative cartesian displacement from reference point (in the form of [x, y, z, roll, pitch, yaw])
-                    # =====================================================================================
-                    self.set_posture_delta(msg)
-                
-                elif cmd == 'controller':
-                    # =====================================================================================
-                    # Controller command received with an array of controller input values
-                    # =====================================================================================
-                    await self.set_controller_delta(msg)
-                
-                elif cmd == 'help':
-                    # =====================================================================================
-                    # Read back instructions on supported commands
-                    # =====================================================================================
-                    await self.print_help()
-
-                elif cmd == 'play':
-                    # =====================================================================================
-                    # Play music
-                    # =====================================================================================
-                    await self.play_file(msg)
-
-                elif cmd == 'led':
-                    # =====================================================================================
-                    # Change LED color
-                    # =====================================================================================
-                    self.set_led(msg)
-
-                elif cmd == 'home':
-                    # =====================================================================================
-                    # Set joint positions to initial packed position
-                    # =====================================================================================
-                    self.robot.home()
-                    
-                elif cmd == 'ikhome':
-                    # =====================================================================================
-                    # Set joint positions to 0
-                    # =====================================================================================
-                    self.robot.ikhome()
-
-                elif cmd == 'fsr':
-                    # =====================================================================================
-                    # Read the sensor value from an FSR
-                    # =====================================================================================
-                    self.read_fsr(msg)            
-                
-                elif cmd == 'debug':
-                    # =====================================================================================
-                    # Turn on or off the verbose output
-                    # =====================================================================================
-                    await self.set_verbose_mode(msg)
-                    
-                elif cmd == 'ping':
-                    # =====================================================================================
-                    # Simple ping command to send a byte to a connected serial client
-                    # =====================================================================================
-                    self.usb_serial.send('pong')
-                
-                else:
-                    self.logger("Unknown command received: '{}'".format(cmd))
-                    
-            #except:
-            #    print("Unknown error")
-            #    self.rgb.set_color([100,100,0]) # Yellow
+                if cmd == 'test':         self.logger('Testing 123')           # Simple test output                
+                elif cmd == 'movemotor':  await self.movemotor(msg)            # single motor movement               
+                elif cmd == 'movemotors': await self.movemotors(msg)           # multiple motor movement
+                elif cmd == 'info':       self.display_robotinfo()             # Get the information of the robot
+                elif cmd == 'gripper':    await self.movegripper(msg)          # Set gripper to specified angle     
+                elif cmd == 'set_pose':   await self.set_pose(msg)             # Global Pose command ([x, y, z, roll, pitch, yaw])
+                elif cmd == 'get_pose':   self.robot.get_pose()                # Get the current pose of the robot
+                 # ==== Check difference ======
+                elif cmd == 'set_delta':  await self.set_delta(msg)            # Relative cartesian position step(in the form of [x, y, z, roll, pitch, yaw])
+                elif cmd == 'posture':    self.set_posture_delta(msg)          # Cartesian displacement from reference point ([x, y, z, roll, pitch, yaw])                
+                elif cmd == 'controller': await self.set_controller_delta(msg) # Controller command received with an array of controller input values                    
+                # ===========================                
+                elif cmd == 'help':       await self.print_help()              # Read back instructions on supported commands
+                elif cmd == 'play_music': await self.play_file(msg)            # Play music
+                elif cmd == 'set_led':    self.set_led(msg)                    # Change LED color
+                elif cmd == 'home':       self.robot.home()                    # Set joint positions to initial packed position                   
+                elif cmd == 'ikhome':     self.robot.ikhome()                  # Set joint positions to 0
+                elif cmd == 'fsr':        self.read_fsr(msg)                   # Read the sensor value from an FSR                         
+                elif cmd == 'debug':      await self.set_verbose_mode(msg)     # Turn on/off the verbose output                    
+                elif cmd == 'rate':       await self.set_loop_rate(msg)        # Update main loop rate (Hz)                    
+                elif cmd == 'trajectory': await self.start_trajectory(msg)     # Perform specified trajectory 
+                elif cmd == 'stop':       await self.stop_trajectory()         # Stop ongoing trajectories
+                else: self.logger("Unknown command received: '{}'".format(cmd))                    
+            except:
+                print("Unknown error")
+                self.rgb.set_color([100,100,0]) # Yellow
 
         ## To check the actual update rate in which the controller is performing at, enable the lines below:
         #print("{}".format(1/(time.monotonic()-self.prev_t)))
         #self.update_rate = 1/(time.monotonic()-self.prev_t)
         #self.prev_t = time.monotonic()
-            
-            
+                 
     def display_robotinfo(self):
         """ Helper function to display status of the robot """
-        self.logger("\n=================================== Robot Info ===================================")
+        self.logger("\n================================ Robot Info =================================")
         self.robot.robotinfo()
-        self.read_fsr()
+        #self.read_fsr() # Enable when we have FSRs
         self.logger("Simulated hardware: {}".format(self.robot.simulate_hardware))
         self.logger("Verbose output: {}".format(self.verbose))
-        self.logger("\n==================================================================================")
+        self.logger("Main loop rate: {}Hz".format(self.rate))
+        self.logger("\n=============================================================================")
         
     async def movemotor(self, cmd):
         """ Function that handles a command that updates a specified robot motor to an angle """
@@ -357,10 +253,48 @@ class AsyncController(object):
         elif len(cmd) < 3:
             self.logger("'movemotor' command and motor index received, missing motor angle (ex: 90)")
         else:    
-            cmd[2] = cmd[2].replace(';','')
             try:    self.robot.set_joint(int(cmd[1]), int(cmd[2]))
             except: self.logger("Error in value being written to motor")
             
+    async def start_trajectory(self, cmd):
+        """ Function that performs a predefined trajectory (builtin keyword or point list)"""
+        if len(cmd) < 2:
+            self.logger("'trajectory' command received, missing trajectory data [list of xyz] or 'circle'")
+            return
+        try:
+            traj = cmd[1]
+            if isinstance(traj, str):
+                if traj.lower() in ['circle']:
+                    MAXSTEP = 101
+                    traj = circ_traj([0.135, 0.000, 0.25], 0.02, MAXSTEP) # draw a circle        
+            repeat = False # Option to repeat trajectory, setting default to false
+            if len(cmd) > 2:
+                if cmd[2].lower() in ['true', 'false']: repeat = cmd[2]      
+                else: self.logger("Repeat option unrecognized, pass true/false")                
+            self.run_traj = True
+            asyncio.create_task(self.run_trajectory(traj, repeat))
+        except:
+            self.logger("Error in setting trajectory", warning=True)
+            
+    async def stop_trajectory(self):
+        """ Stops all ongoing trajectories """
+        if self.verbose: self.logger("Stopping trajectory")
+        self.run_traj = False
+                    
+    async def run_trajectory(self, trajectory_points, repeat=False):
+        """ Run a given trajectory, loops if repeat is set to true """
+        index = 0
+        while self.run_traj:
+            for index in range(len(trajectory_points)):
+                if not self.run_traj:
+                    break
+                pose_msg = [["pose", ",".join(map(str, trajectory_points[index])) + ",0.00,0.00,0.00;"]]
+                await self.parse_command(pose_msg)
+                await asyncio.sleep(1 / self.rate)
+            if not repeat:
+                break
+        if self.verbose: self.logger("Trajectory completed or stopped.")
+
     async def movemotors(self, cmd):
         """ Function that handles a command that updates all robot motors by the order values are received """
         if len(cmd) < 2:
@@ -378,14 +312,14 @@ class AsyncController(object):
             except: self.logger("Error in values being written to motors")
 
     async def movegripper(self, cmd):
-        """ Function that handles a command that updates all robot motors by the order values are received """
+        """ Set gripper state/angle to specified position """
         if len(cmd) < 2:
-            self.logger("'gripper' command received, missing angle (ex: 90)")
+            self.logger("'gripper' command received, missing value (ex: 90, 'open')")
+        if isinstance(cmd[1], str):
+            self.robot.set_gripper(cmd[1].lower())
         else:
             try: 
-                cmd[1] = cmd[1].replace(';','')
-                val = int(float(cmd[1])) # convert string to float before converting to int
-                self.robot.set_gripper(val)
+                self.robot.set_gripper(int(float(cmd[1]))) # convert string to float before converting to int
             except: 
                 self.logger("Warning, value passed {} is not a number".format(cmd[1]))
     
@@ -396,17 +330,21 @@ class AsyncController(object):
         else:
             pose_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",")  
             vals = [float(i) for i in pose_str]
+            print(vals)
             self.robot.set_pose(vals)
-            #if self.verbose: self.logger("Servos: {}".format([angle.deg for angle in self.robot.angles]))
 
     async def set_delta(self, cmd):
         """ Function that handles a command that updates the end effector pose with a delta movement """
         if len(cmd) < 2:
             self.logger("No position data received. Expected '[x, y, z]' or '[x, y, z, roll, pitch, yaw]'")
         else:
-            pose_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",")    
-            self.robot.set_pose( self.robot.handle_delta(pose_str) )
-            #if self.verbose: self.logger("Servos: {}".format([angle.deg + self.robot.joint_offsets[i] for i, angle in enumerate(self.robot.angles)]))
+            try:
+                pose_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",")    
+                new_pose = self.robot.handle_delta(pose_str)
+                print(new_pose)
+                self.robot.set_pose( new_pose )
+            except:
+                self.logger("Error in sending delta pose",True)
 
     def set_posture_delta(self, cmd):
         """ Function that handles relative displacement from an origin point """
@@ -415,7 +353,6 @@ class AsyncController(object):
         else:
             pose_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",") 
             self.robot.set_pose( self.robot.handle_posture_delta(pose_str) )
-            #if self.verbose: self.logger("Servos: {}".format([angle.deg + self.robot.joint_offsets[i] for i, angle in enumerate(self.robot.angles)]))
 
     async def set_controller_delta(self, cmd):
         """ Function that handles a controller command by converting it into a delta position, 
@@ -427,9 +364,8 @@ class AsyncController(object):
             new_delta_pos = convertControllerToDelta(cmd[1])
             if self.verbose: self.logger("New delta pose: {}".format(new_delta_pos))
             self.robot.set_pose( self.robot.handle_delta(new_delta_pos) )
-            #if self.verbose: self.logger("Servos: {}".format([angle.deg + self.robot.joint_offsets[i] for i, angle in enumerate(self.robot.angles)]))
 
-    async def play_file(self, cmd):
+    async def play_music(self, cmd):
         """ Function that handles a command to play file. Checks that the file exists before playing """
         if len(cmd) < 2:
             self.logger('Missing name of file to play')
@@ -449,39 +385,59 @@ class AsyncController(object):
             self.rgb.set_color(rgb_val)
 
     async def set_verbose_mode(self, cmd):
-        """ Enable/disable the verbose output by setting the attribute to true or false
-        """
-        if cmd[1].lower() is not 'on' and cmd[1].lower() is not 'off':
-            self.logger("Warning, unknown input '{}'. Please pass 'on' or 'off'".format(cmd[1]))
-        elif  cmd[1].lower() == 'on': 
+        """ Enable/disable the verbose output by setting the attribute to true or false """
+        if cmd[1].lower() in ['on', 'true']: 
             self.verbose = True
-            self.logger("Debug mode set to on")
-        elif  cmd[1].lower() == 'off': 
+        elif cmd[1].lower() in ['off', 'false']: 
             self.verbose = False
-            self.logger("Debug mode set to off")
-
-        self.usb_serial.verbose = self.verbose
+        else:
+            self.logger("Unknown input, acceptable inputs are on/off/true/false", warning=True)
+        self.logger(f"Debug mode set to {self.verbose}")
+        self.serial.verbose = self.verbose
         self.robot.verbose = self.verbose
         self.rgb.verbose = self.verbose
         self.player.verbose = self.verbose
         
+    async def set_loop_rate(self, cmd):
+        """ Update the main loop rate (Hz) """
+        if len(cmd) < 2:
+            self.logger("Missing rate value. Usage: rate <value>")
+        try:
+            self.rate = int(cmd[1])
+            self.logger(f"Main loop rate updated to {self.rate} Hz")
+        except ValueError:
+            self.logger("Invalid rate value, please provide valid integer")
+        
     async def print_help(self):
         """ Display supported commands"""
-        self.logger('''\n ================================= List of commands =============================================
- movemotor MOTOR VALUE   // Moves motor A to absolute position B (deg)
- movemotors VALUES       // Moves motors absolute position B (deg) assimung VALUES is a list
- robotinfo               // Prints information about the robot system, including motors, grippers, and sensors
- gripper VALUE           // Gripper command to send the state opened (1) or closed (0)
- pose VALUES             // Updates the end effector pose to an absolute cartesian coordinate pose. Pass a list of values (ex: [X,Y,Z] or [X,Y,Z,R,P,Y])
- delta VALUES            // Updates the end effector pose with a delta movement relative to the robot's current pose. Pass a list of values (ex: [X,Y,Z] or [X,Y,Z,R,P,Y])
- controller              // Controller-specific message as a long ascii string with buttons and joystick data that gets converted into a delta position. Check 'xbox_utils' for message type details
- help                    // Display available commands
- play STRING             // Play a music file 
- led VALUES              // Set the RGB LED to a specific color using 0-255 values in a 3-element list
- debug STRING            // Pass 'on' or 'off' to enable or disable the verbose output
- posture VALUES          // Updates the end effector pose with a delta movement relative to the robot's origin. Pass a list of values (ex: [X,Y,Z] or [X,Y,Z,R,P,Y])
-                    '''
-                   )
+        self.logger('''
+ ================================= List of commands =============================================
+ movemotor MOTOR VALUE      // Moves motor A to absolute position B (deg)
+ movemotors VALUES          // Moves motors absolute position B (deg) assimung VALUES is a list
+ info                       // Prints info about robot system (motors, grippers, and sensors)
+ gripper VALUE              // Gripper command to set the state (open/close) or position
+ pose VALUES                // Updates the end effector pose to an absolute cartesian coordinate pose. Pass a
+                               list of values (ex: [X,Y,Z] or [X,Y,Z,R,P,Y])
+ delta VALUES               // Updates the end effector pose with a delta movement relative to the robot's 
+                               current pose. Pass a list of values (ex: [X,Y,Z] or [X,Y,Z,R,P,Y])
+ posture VALUES             // Updates the end effector pose with a delta movement relative to the robot's 
+                               origin. Pass a list of values (ex: [X,Y,Z] or [X,Y,Z,R,P,Y])
+ controller                 // Controller-specific message as a long ascii string with buttons and joystick 
+                               data that gets converted into a delta position. Check 'xbox_utils' for message 
+                               type details
+ help                       // Display available commands
+ play_music STRING          // Play a music file 
+ led VALUES                 // Set the RGB LED to a specific color using 0-255 values in a 3-element list
+ debug STRING               // Pass 'on' or 'off' to enable or disable the verbose output
+ rate VALUE                 // Update the main loop rate (Hz)
+ trajectory STRING [REPEAT] // Perform a specified trajectory (e.g. 'circle') with optional repeat argument
+                               (true/false)
+ stop                       // Stop ongoing traetories
+ fsr                        // Read the sensor values from the FSRs
+ home                       // Set the robot to its home position
+ test                       // Test command to verify output from device
+ ================================================================================================
+ ''')
 
     def dequeue_msg(self, idx=0):
         """Handles dequeuing of commands in the specified order """
@@ -500,7 +456,6 @@ class AsyncController(object):
                     cmd = command.split(ARGUMENT_DELIMITER, 1) # Each new command precedes a space, followed by comma-separated arguments      
                     if self.verbose: self.logger("Adding {} to queue:".format(cmd))
                     self.queue.append(cmd) 
-        
         
     def connect_to_wifi(self):
         """ Makes an attempt to connect to the network given the credentials.
@@ -522,19 +477,19 @@ class AsyncController(object):
     async def serial_client(self, interval=100):
         """ Read serial commands and add them to the command queue """
         while self.all_stop != True:
-            self.usb_serial.update()
+            self.serial.update()
             
             # If connection was lost
-            if not self.usb_serial.connected and self.connected:
+            if not self.serial.connected and self.connected:
                 self.rgb.set_color([100, 0, 0])
                 self.connected = False
-            elif self.usb_serial.connected and not self.connected:
+            elif self.serial.connected and not self.connected:
                 self.rgb.set_color([0, 100, 0])
                 self.connected = True
                 
-            if self.usb_serial._out_data:        
+            if self.serial._out_data:        
                 # Skip the queueing structure and handle commands as soon as they come
-                data = self.usb_serial.out_data
+                data = self.serial.out_data
                 await self.parse_command(data)
             
             #await asyncio.sleep(1 / int(interval))
@@ -604,3 +559,10 @@ class AsyncController(object):
                 self.logger("Warning - invalid key. Choose 'Left' or 'Right'".format(key_str))
                 return
             self.logger("Left: {}, Right: {}".format(self.fsr[cmd[1]].newtons))
+
+    def logo(self):
+        self.logger('''
+ __  __  _  __  _  _      ____  _____  __  __ 
+|  \/  || ||  \| || |    / () \ | () )|  \/  |
+|_|\/|_||_||_|\__||_|   /__/\__\|_|\_\|_|\/|_|
+''')

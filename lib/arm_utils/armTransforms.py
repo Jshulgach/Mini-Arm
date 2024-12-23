@@ -1,5 +1,6 @@
 
-import ulab.numpy as np
+#import ulab.numpy as np
+import numpy as np
 
 # Matrix mathematics dont seem to be as accurate as the symbolic math or numpy operations
 # on the PC. Small numbers are found in matrices instead of 0, which could be causing jumping

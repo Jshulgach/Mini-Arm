@@ -1,0 +1,417 @@
+<?xml version="1.0" ?>
+<!-- =================================================================================== -->
+<!-- Mini Arm URDF. A lot of this was custom written to allow the gripper to behave like -->
+<!-- it actually does. Modifications should be made with care                            -->
+<!-- =================================================================================== -->
+<robot name="miniarm" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Custom robot colors -->
+  <material name="grey">
+    <color rgba="0.8 0.8 0.8 1.0"/>
+  </material>
+
+  <material name="sky-blue">
+    <color rgba="0.12 0.56 1.0 1.0"/>
+  </material>
+
+
+  <!-- Electronics Link -->
+  <link name="miniarm_electronics">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/electronics_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/electronics_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- Base Link -->
+  <link name="miniarm_base">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/base_link.STL" />
+      </geometry>
+      <material name="">
+        <color rgba="0.8 0.8 0.8 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="miniarm_joint0" type="fixed">
+    <origin xyz="0.015 0.025 0.082" rpy="0 0 0" />
+    <parent link="miniarm_electronics" />
+    <child link="miniarm_base" />
+  </joint>
+
+  <!-- Link 1 -->
+  <link name="miniarm_link1">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_1.STL" />
+      </geometry>
+      <material name="sky-blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_1.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="miniarm_joint1" type="revolute">
+    <origin xyz="-0.015 -0.024 0.004" rpy="1.5707963267948966 0 1.5707963267948966" />
+    <parent link="miniarm_base" />
+    <child link="miniarm_link1" />
+    <axis xyz="0 1 0" />
+    <limit effort="10" lower="-1.5708" upper="1.5708" velocity="2" />
+  </joint>
+
+  <!-- Link 2 -->
+  <link name="miniarm_link2">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_2.STL" />
+      </geometry>
+      <material name="sky-blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_2.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="miniarm_joint2" type="revolute">
+    <origin xyz="0.0 0.0415 -0.015" rpy="0 1.5708 0" />
+    <parent link="miniarm_link1" />
+    <child link="miniarm_link2" />
+    <axis xyz="0 0 1" />
+    <limit effort="10" lower="-1.5708" upper="1.5708" velocity="2" />
+  </joint>
+
+  <!-- Link 3 -->
+  <link name="miniarm_link3">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_3.STL" />
+      </geometry>
+      <material name="sky-blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_3.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="miniarm_joint3" type="revolute">
+    <origin xyz="0.0 0.12 0" rpy="0 3.141592653589793 0" />
+    <parent link="miniarm_link2" />
+    <child link="miniarm_link3" />
+    <axis xyz="0 0 1" />
+    <limit effort="10" lower="-1.5708" upper="2.356195" velocity="2" />
+  </joint>
+
+  <!-- Link 4 -->
+  <link name="miniarm_link4">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_4.STL" />
+      </geometry>
+      <material name="sky-blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_4.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="miniarm_joint4" type="revolute">
+    <origin xyz="-0.0055 0.09 0.0135" rpy="0 0 0" />
+    <parent link="miniarm_link3" />
+    <child link="miniarm_link4" />
+    <axis xyz="0 1 0" />
+    <limit effort="10" lower="-1.5708" upper="1.5708" velocity="2" />
+  </joint>
+
+  <!-- Link 5 -->
+  <link name="miniarm_link5">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_5.STL" />
+      </geometry>
+      <material name="sky-blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/link_5.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="miniarm_joint5" type="revolute">
+    <origin xyz="0.005 0.028 -0.01" rpy="0 3.141592653589793 -1.5708" />
+    <parent link="miniarm_link4" />
+    <child link="miniarm_link5" />
+    <axis xyz="0 0 1" />
+    <limit effort="10" lower="-1.5708" upper="1.5708" velocity="2" />
+  </joint>
+
+  <!-- Gripper -->
+  <link name="miniarm_gripper_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" />
+      </geometry>
+      <material name="sky-blue"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="miniarm_gripper_link_joint" type="revolute">
+    <origin xyz="0.042 0.004 -0.006" rpy="0 1.5708 0" />
+    <parent link="miniarm_link5" />
+    <child link="miniarm_gripper_link" />
+    <axis xyz="0 0 1" />
+    <limit effort="10" lower="-1.5708" upper="1.5708" velocity="2" />
+  </joint>
+
+  <link name="miniarm_left_knuckle_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_right_knuckle_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_left_bottom_knuckle_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_right_bottom_knuckle_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_left_inner_knuckle_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_right_inner_knuckle_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_left_inner_bottom_knuckle_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_right_inner_bottom_knuckle_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_left_finger_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/finger_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/finger_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="miniarm_right_finger_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/finger_link.STL" />
+      </geometry>
+      <material name="grey"/>
+    </visual>
+    <collision>
+      <geometry>
+        <mesh filename="package://miniarm_description/meshes/finger_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="miniarm_gripper_joint" type="revolute">
+    <origin xyz="-0.013 0.01 0.02" rpy="0 -1.5708 0" />
+    <parent link="miniarm_gripper_link" />
+    <child link="miniarm_left_knuckle_link" />
+    <axis xyz="0 1 0" />
+    <limit effort="10" lower="-2.35619" upper="0" velocity="2" />
+  </joint>
+
+  <joint name="miniarm_right_knuckle_joint" type="continuous">
+    <origin xyz="0.013 0.01 0.02" rpy="0 -1.5708 0" />
+    <parent link="miniarm_gripper_link" />
+    <child link="miniarm_right_knuckle_link" />
+    <axis xyz="0 1 0" />
+    <mimic joint="miniarm_gripper_joint" multiplier="-1" offset="0"/>
+  </joint>
+
+  <joint name="miniarm_left_bottom_knuckle_joint" type="continuous">
+    <origin xyz="-0.013 -0.004 0.02" rpy="0 -1.5708 0" />
+    <parent link="miniarm_gripper_link" />
+    <child link="miniarm_left_bottom_knuckle_link" />
+    <axis xyz="0 1 0" />
+    <mimic joint="miniarm_gripper_joint" multiplier="1" offset="0"/>
+  </joint>
+
+  <joint name="miniarm_right_bottom_knuckle_joint" type="continuous">
+    <origin xyz="0.013 -0.004 0.02" rpy="0 -1.5708 0" />
+    <parent link="miniarm_gripper_link" />
+    <child link="miniarm_right_bottom_knuckle_link" />
+    <axis xyz="0 1 0" />
+    <mimic joint="miniarm_gripper_joint" multiplier="-1" offset="0"/>
+  </joint>
+
+  <joint name="miniarm_left_inner_knuckle_joint" type="continuous">
+    <origin xyz="-0.005 0.01 0.041" rpy="0 -1.5708 0" />
+    <parent link="miniarm_gripper_link" />
+    <child link="miniarm_left_inner_knuckle_link" />
+    <axis xyz="0 1 0" />
+    <mimic joint="miniarm_gripper_joint" multiplier="1" offset="0"/>
+  </joint>
+
+  <joint name="miniarm_right_inner_knuckle_joint" type="continuous">
+    <origin xyz="0.005 0.01 0.041" rpy="0 -1.5708 0" />
+    <parent link="miniarm_gripper_link" />
+    <child link="miniarm_right_inner_knuckle_link" />
+    <axis xyz="0 1 0" />
+    <mimic joint="miniarm_gripper_joint" multiplier="-1" offset="0"/>
+  </joint>
+
+  <joint name="miniarm_left_inner_bottom_knuckle_joint" type="continuous">
+    <origin xyz="-0.005 -0.004 0.041" rpy="0 -1.5708 0" />
+    <parent link="miniarm_gripper_link" />
+    <child link="miniarm_left_inner_bottom_knuckle_link" />
+    <axis xyz="0 1 0" />
+    <mimic joint="miniarm_gripper_joint" multiplier="1" offset="0"/>
+  </joint>
+
+  <joint name="miniarm_right_inner_bottom_knuckle_joint" type="continuous">
+    <origin xyz="0.005 -0.004 0.041" rpy="0 -1.5708 0" />
+    <parent link="miniarm_gripper_link" />
+    <child link="miniarm_right_inner_bottom_knuckle_link" />
+    <axis xyz="0 1 0" />
+    <mimic joint="miniarm_gripper_joint" multiplier="-1" offset="0"/>
+  </joint>
+
+  <!-- Finger joints will need a 15 degree offset on top of the knuckle joint orientation -->
+  <joint name="miniarm_left_finger_joint" type="continuous">
+    <origin xyz="0.031 -0.001 0.0" rpy="1.22173 0 -1.5708" />
+    <parent link="miniarm_left_knuckle_link" />
+    <child link="miniarm_left_finger_link" />
+    <axis xyz="1 0 0" />
+    <limit effort="10" lower="-2.35619" upper="0" velocity="2" />
+    <mimic joint="miniarm_gripper_joint" multiplier="1" offset="0"/>
+  </joint>
+
+  <joint name="miniarm_right_finger_joint" type="continuous">
+    <origin xyz="0.031 -0.009 0.0" rpy="-1.9199 0 1.5708" />
+    <parent link="miniarm_right_knuckle_link" />
+    <child link="miniarm_right_finger_link" />
+    <axis xyz="1 0 0" />
+    <limit effort="10" lower="-2.35619" upper="0" velocity="2" />
+    <mimic joint="miniarm_gripper_joint" multiplier="1" offset="0"/>
+  </joint>
+
+</robot>

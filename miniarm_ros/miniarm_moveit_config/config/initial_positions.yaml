@@ -1,0 +1,8 @@
+# Default initial positions for the miniarm's ros2_control fake system
+initial_positions:
+  miniarm_joint1: 0.0
+  miniarm_joint2: -0.785
+  miniarm_joint3: 0.0
+  miniarm_joint4: -2.356
+  miniarm_joint5: 0.0
+  miniarm_joint6: 1.571

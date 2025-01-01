@@ -1,37 +1,49 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 # Mini-Arm
-![](https://github.com/Jshulgach/Mini-Arm/blob/main/doc/robotic-arm-3d-model-2023.png)
+![](assets/robotic-arm-3d-model-2023.png)
 
-The Mini Arm is a miniature version of the [Desktop-Arm](https://github.com/Jshulgach/Desktop-Arm) project with IK solver inspirations from [Alberto Abarzua](https://github.com/alberto-abarzua/3d_printed_robot_arm) and [Mithi Sevilla](https://github.com/mithi/arm-ik), a portable 6DOF 3D-printed robot arm with open-source models and code.
-Robot DH paramater numerical calculations referenced from:
- - [Mithi Sevilla](https://github.com/mithi/arm-ik) 
- - [Zenetio](https://github.com/zenetio/RoboND-Kinematics-Project)
- - [Ohara124c41](https://github.com/Ohara124c41/RoboND-Kinematics-Kuka-KR210). 
- - [NitishPuri](https://github.com/NitishPuri/RoboND-Kinematics-Project/)
- 
- This package does NOT use any symbolic math packagaes, only numpy, which makes this scalable to microcontrollers with the same kinematic configuration!
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+![Python](https://img.shields.io/badge/python-3.10-blue)
+![GitHub Repo stars](https://img.shields.io/github/stars/JShulgach/Mini-Arm)
 
-While this little machine can run on a 5V 2A DC adapter, it has other cool features:
 
-+ Runs CircuitPython on a Raspberry Pico W (wifi operated)
+
+The Mini Arm is a miniature version of the [Desktop-Arm](https://github.com/Jshulgach/Desktop-Arm) project, a portable 6DOF 3D-printed open-source robot arm. This cool device runs on a 5V 2A DC adapter and features:
+
++ Runs on Raspberry Pico microcontroller with python code using [CircuitPython](https://circuitpython.org/)
++ Has an IK solver to handle joint state calculation on the microcontroller itself!
 + All 3D printable components (aside from nuts & bolts)
-+ Total cost of hardware less than $60
++ Total parts cost <= $60
 + Weighs less than 1lb (0.3kg to be exact)
-+ Capacity to integrate more features
+
+These install instructions were tailored using a Windows 10 OS. There are also setup instructions for [Ubuntu](https://www.gibbard.me/using_the_raspberry_pi_pico_on_ubuntu/) and the [Raspberry Pi](https://www.tomshardware.com/how-to/raspberry-pi-pico-setup) too.
+
 
 # Where to start ? 
-This Github repository contains Installation and Quick Start instructions for the Mni Arm project.
+This GitHub repository contains Installation and Quick Start instructions for the Mni Arm project. Here is a description of the repository structure:
+* `miniarm_ros` - Contains ROS packages for the Mini Arm
+* `pico` - Contains CircuitPython firmware and code for the Mini Arm using a Raspberry Pico microcontroller
+* `tests` - Python test scripts for the package
+* `XboxClient` - Teleop script to run on a PC with a connected Xbox controller
 
-Table of Contents
----
-+ [Hardware](#hardware)
-+ [Raspberry Pico W Installation](#rpi-installation)
-+ [Quick Start](#quick-start)
+## Installation
 
----
+### Software:
+1. It is recommended to use a virtual environment to manage dependencies. To create a new virtual environment with [anaconda](https://www.anaconda.com/products/individual), use the following command:
+   ```bash
+   conda create -n miniarm python=3.10
+   conda activate miniarm
+   ```
+2. Download the repository using git:
+   ```bash
+   git clone https://github.com/Jshulgach/Mini-Arm.git
+   cd Mini-Arm
+   ```
+3. To install dependencies, use the provided requirements file:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## Hardware:
-<a name="hardware"/>
+### Hardware:
 
 1. Building the arm
    + The full list of parts needed to assemble the arm can be found in the [B.O.M](https://github.com/Jshulgach/Desktop-Arm/blob/master/doc/bom.xlsx).
@@ -39,76 +51,38 @@ Table of Contents
 
 2. Electrical wiring
 
-   ![alt](https://github.com/Jshulgach/Mini-Arm/blob/main/doc/wiring.PNG)
+   ![](assets/wiring.PNG)
+
 ---
+## Demos
 
-## Raspberry Pico W Software Installation:
-<a name="rpi-installation"/>
-
-These install instructions were tailored using a Windows 10 OS. There are also setup instructions for [Ubuntu](https://www.gibbard.me/using_the_raspberry_pi_pico_on_ubuntu/) and the [Raspberry Pi](https://www.tomshardware.com/how-to/raspberry-pi-pico-setup) too. There's also support for [ROS](https://ubuntu.com/blog/getting-started-with-micro-ros-on-raspberry-pi-pico) if you want a challenge...
-
-If plugging in your Pico for the first time, it should appear in your PC in boot mode with a couple files. You will need to install the CircuitPython UF2 file onto the Pico W. 
-1. Move the included CircuitPython (8.4.0) UF2 file into the Pico drive. 
-   + The Pico should reboot and display new files after dropping the uf2 file into the drive.       
-3. Flash code and libraries to Pico
-   + Move the `lib` folder, `settings.toml` and `code.py` files from the `Mini-Arm` package directly into the Pico drive. This will flash the Pico with the code and libraries.
-3. Configure communication with your Min Arm (USB or TCP/IP).
-   + For USB Serial communication, it's ready as-is! Just plug a USB cable into the port exposed on the side.
-   + For Wifi/Network usage, configure your network credentials in the `settings.toml` file and change the `COMM_TYPE` to NETWORK. You can use a serial console to see the host IP. There are several editors with CircuitPython or MicroPython support (Thonny, Pycharm, VSCode) but the easiest method I found was using PuTTY. Connect to the Pico with the assigned COM port, and press `Ctrl+d` to restart the code.
-
-The arm should be good to go!
-
-Note: You can also download the latest version of [CircuitPython](https://circuitpython.org/board/raspberry_pi_pico/) intead of using the provided version, the only risk being minor bugs caused by differences is versions. The Adafruit website has a guide on [getting started with CircuitPython](https://learn.adafruit.com/getting-started-with-raspberry-pi-pico-circuitpython/circuitpython). 
-
-## Quick Start
-
+---
 ### Xbox Teleop
-<a name="quick-start"/>
-
+![](assets/xboxcontroller.png)
 When the arm first turns on, the LED will change to green to indicate successful connection to the network. A blue light indicates a successful connection to the server with a client. Open the `xbox-client.py` file and set `COMM_TYPE` to the same type set for Mini Arm in the `settings.toml` file. Plug in a controller, open a terminal in the directory containing the `xbox-client.py` file, then run the python file:
 ```
 python xbox-client.py
 ```
 
-### Robot controller commands
-Sending commands to either the TCP/IP server or serial to the robot requires an encoded string message. The commands currently supported are below:
+### AJ GUI (In Progress) 
+Robot control cana also be done through the Unity version of the "AJ" GUI v1 (Link coming soon), or an SSH terminal to the robot. FOR TCP/IP, quickest way using a python terminal:
 
-|          Name            |                Parameters                |                         Description                                 |
-| ------------------------ | ---------------------------------------- | ------------------------------------------------------------------- |
-|       movemotor          |        MOTOR       VALUE                 | Moves motor number MOTOR to absolute position VALUE (deg)           |
-|       movemotors         |        [VAL1,VAL2,VAL3,VAL4,VAL5,VAL6]   | An array containing values for each motor. Moves all the motors at once to the values included in the array from base-to-gripper                                  |
-|       play               |        SONGNAME                          | Plays a tune from the selected SONGNAME if in the library           |
-|       pose               |        [X, Y, Z, ROLL, PITCH, YAW]       | Moves the end effector to an absolute coordinate pose frame with respect to the world frame. It is helpful to know where the robot EE frame is.                   |
-|       delta              |        [X, Y, Z, ROLL, PITCH, YAW]       | Displaces the end effector from its current pose given the displacement values                                                                                    |
-|       robotinfo          |        none                              | Gives back information about the robot's current pose and joint state                                                                                             |
-|       gripper            |        VALUE                             | Moves the gripper based on the input received                       |
-|       debugon            |        none                              | Enables verbose feedback outputs for debugging                      |
-|       debugoff           |        none                              | Disables verbose feedback outputs for debugging                     |
+### ROS2 Robot Visualizer
+The Mini Arm can be visualized in RViz2 using the included ROS2 packages. Refer to the [build instructions](/miniarm_ros/README.md) for more information.
 
-### Serial Control
-TO-DO
+![](assets/rviz_view.png)
 
+Feel free to reach out to me in case of any issues.  
+If you find this repo useful in any way please do star ⭐️ it so that others can reap it's benefits as well!
 
-### TCP/IP Control
---- 
-Robot control is done through the Unity version of the "AJ" GUI v1 (Link coming soon), or an SSH terminal to the robot. FOR TCP/IP, quickest way using a python terminal:
-```
-import socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(("YOUR-ROBOT_IP",1000))
-```
-Send a command like an sbsolute position [x, y, z, roll, pitch, yaw], where cartesian coordinates are in mm and orientation is in degrees:
-```
-s.send(b"pose [1755, 0, 2660, 0, 0, 0]")
-```
-Or open the gripper:
-```
-s.send(b"gripper 180")
-```
-The arm has a very limited library of themes (starwars or mii), but enjoyable nonetheless. Play a sound file by passing the name:
-```
-s.send(b"play mii")
-```
+## Acknowledgements
+This project is inspired from the work done by:
+ - [Alberto Abarzua](https://github.com/alberto-abarzua/3d_printed_robot_arm)
+ - [Mithi Sevilla](https://github.com/mithi/arm-ik) 
+ - [Zenetio](https://github.com/zenetio/RoboND-Kinematics-Project)
+ - [Ohara124c41](https://github.com/Ohara124c41/RoboND-Kinematics-Kuka-KR210). 
+ - [NitishPuri](https://github.com/NitishPuri/RoboND-Kinematics-Project/)
+
 
 ## License
 Copyright 2022-2023 [Jonathan Shulgach](https://www.linkedin.com/in/jonathan-shulgach/)

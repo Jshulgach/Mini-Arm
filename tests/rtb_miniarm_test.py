@@ -4,13 +4,13 @@ from spatialmath import SE3
 import numpy as np
 import matplotlib.pyplot as plt
 
-mesh_list = ['3d_files/mesh/base_link.STL',
-             '3d_files/mesh/link_1.STL',
-             '3d_files/mesh/link_2.STL',
-             '3d_files/mesh/link_3.STL',
-             '3d_files/mesh/link_4.STL',
-             '3d_files/mesh/link_5.STL',
-             '3d_files/mesh/gripper.STL',]
+mesh_list = ['miniarm_description/mesh/base_link.STL',
+             'miniarm_description/mesh/link_1.STL',
+             'miniarm_description/mesh/link_2.STL',
+             'miniarm_description/mesh/link_3.STL',
+             'miniarm_description/mesh/link_4.STL',
+             'miniarm_description/mesh/link_5.STL',
+             'miniarm_description/mesh/gripper.STL',]
 
 # Define your custom robot using ERobot
 robot = ERobot([

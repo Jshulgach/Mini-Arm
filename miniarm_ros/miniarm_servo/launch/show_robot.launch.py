@@ -10,10 +10,14 @@ def generate_launch_description():
 
     # Declare launch arguments
     declared_arguments = []
-    declared_arguments.append(DeclareLaunchArgument(
-        name="launch_rviz", default_value="false", description="Launch RViz?", choices=['true', 'false', 'True', 'False']
-    ))
+    declared_arguments.append(
+        DeclareLaunchArgument(name="launch_rviz", default_value="true", description="Launch RViz?")
+    )
     launch_rviz = LaunchConfiguration('launch_rviz')
+    declared_arguments.append(
+        DeclareLaunchArgument(name="use_gui", default_value="true", description="Use GUI to move robot?")
+    )
+    use_gui = LaunchConfiguration('use_gui')
 
     # Get URDF
     urdf_file = os.path.join(get_package_share_directory("miniarm_description"), "urdf", "miniarm.urdf")
@@ -43,13 +47,13 @@ def generate_launch_description():
     )
 
     # Rviz2 Node. This is the simulator which visualizes the robot model and the TF tree
-    rviz_config_file = (get_package_share_directory("moveit_servo") + "/rviz/miniarm.rviz")
+    #rviz_config_file = (get_package_share_directory("moveit_servo") + "/rviz/miniarm.rviz")
     rviz_node = Node(
         package='rviz2',
         condition=IfCondition(launch_rviz),
         executable='rviz2',
         name='rviz2',
-        arguments=["-d", rviz_config_file],
+    #    arguments=["-d", rviz_config_file],
         output='screen',
     )
 
@@ -57,6 +61,7 @@ def generate_launch_description():
     # joint values. Quick way to make sure your urdf loads correctly.
     joint_state_publisher_gui = Node(
         package='joint_state_publisher_gui',
+        condition=IfCondition(use_gui),
         executable='joint_state_publisher_gui',
         name='joint_state_publisher_gui',
         output='screen',

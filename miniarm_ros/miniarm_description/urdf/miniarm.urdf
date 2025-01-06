@@ -115,11 +115,13 @@
   </link>
 
   <joint name="miniarm_joint3" type="revolute">
-    <origin xyz="0.0 0.12 0" rpy="0 3.141592653589793 0" />
+    <!-- <origin xyz="0.0 0.12 0" rpy="0 3.141592653589793 0" /> -->
+    <origin xyz="0.0 0.12 0" rpy="0 3.1416 1.5708" />
     <parent link="miniarm_link2" />
     <child link="miniarm_link3" />
     <axis xyz="0 0 1" />
-    <limit effort="10" lower="-1.5708" upper="2.356195" velocity="2" />
+    <!-- <limit effort="10" lower="-1.5708" upper="2.356195" velocity="2" /> -->
+    <limit effort="10" lower="-0.785" upper="2.3561" velocity="2" />
   </joint>
 
   <!-- Link 4 -->

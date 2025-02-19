@@ -6,8 +6,9 @@ from adafruit_servokit import ServoKit
 from arm_utils.armTransforms import *
 
 __author__ = "Jonathan Shulgach"
-__version__ = "1.4.3"
-__HOME__   = [0, 32,  0, 90, 15, 90]  # Home position from AJ Unity GUI 12/3/23
+__version__ = "1.4.5"
+__HOME__ = [0, 0, 0, 0, 0, 0] # Home state for robot joints, after taking offset into consideration
+#__HOME__   = [0, 32,  0, 90, 15, 90]  # Home position from AJ Unity GUI 12/3/23
 __IKHOME__ = [0,  0,  0,  0,  0,  0]  # IK transformations
 
 # Servo channel numbering on the PCA9685
@@ -20,7 +21,7 @@ GRIPPER_LINK_SERVO   = 10
 GRIPPER_SERVO        = 9
 
 # Set values for open/close states of gripper if keyword is passed
-GRIPPER = {'open': 90, 'close': 0}
+GRIPPER = {'open': 120, 'close': 0} # Open used to be 100
 
 def ServoIndex(key):
     """helper function to convert number to servo name
@@ -56,27 +57,27 @@ class RobotArm(object):
         self.dh = dh_params
         self.speed_control = speed_control
         self.verbose = verbose
-        
         self.counter = 0
         self.warning = True
 
         # joints constraints
         self.default_min = -2*np.pi
         self.default_max = 2*np.pi
-        self.flip_direction = [False, True, False, False, False, False, False] # 12/4/23
+        self.flip_direction = [True, True, False, False, False, False, False] # 12/27/24
+        #self.flip_direction = [False, True, False, False, False, False, False] # 12/4/23
         self.orient_flip  = [False, False, True, False, True, False]
-        self.joint_offsets = [90, 90, 45, 90, 90, 90, 90] # Necessary for the IK math to fix the transformations
+        self.joint_offsets = [90, 90, 45, 90, 110, 90, 90] # Necessary for the IK math to fix the transformations
         # For Unity GUI 12/14/23
         #self.flip_direction = [False, True, False, False, False, False, False] # 12/4/23
         #self.orient_flip  = [False, False, False, False, False, False]
-        #self.joint_offsets = [0, 0, 0, 0, 0, 0, 90] 
-        
+        #self.joint_offsets = [0, 0, 0, 0, 0, 0, 90]
+
         self.joint_limits = [lambda x: x > self.default_min and x < self.default_max for x in range(0,6)]
         self.joint_speed_limit = 120 # rpm,  Max speed is 120 revolutions per minute
 
         # Joints angles
         self.angles = [Angle(0.00, "rad") for i in range(6)] # Used for tracking the joint state
-        self.config = Config([], [], 100) # Used for tracking the end effector pose
+        self.config = Config([], [], 0) # Used for tracking the end effector pose
         self.reference_pos = None
 
         # Create references to the servo hardware
@@ -84,8 +85,8 @@ class RobotArm(object):
         if not self.simulate_hardware:
             # necessary to create the custom busio.I2C object instead of the ServoKit default due to some dormant library issue 
             i2c = busio.I2C(board.GP1, board.GP0)
-            self.servos = ServoKit(channels=16, i2c=i2c) 
-            
+            self.servos = ServoKit(channels=16, i2c=i2c)
+
     @property
     def constraints(self):
         return [self.j1_range, self.j2_range, self.j3_range, self.j4_range, self.j5_range, self.j6_range]
@@ -97,7 +98,7 @@ class RobotArm(object):
 
     def robotinfo(self):
         """ Helper function to display the state of the robot. The outpout will look like below:
-        
+
         Current joint state: [90, 90, 90, 90, 90, 90]
         Current pose:   cords: [x: 185.00000, y: 0.00000, z: 215.00000]
           angles: [Roll: 0.00000, Pitch: -0.00000, Yaw:0.00000]
@@ -106,53 +107,54 @@ class RobotArm(object):
         self.logger("\nCurrent pose:\n {}".format(self.config))
         self.logger("Joint states:    {}".format(self.get_joint_state()))
         self.logger("Servo readings:  {}".format([self.get_servo_position(i) for i in range(0,6)]))
+        self.logger("Gripper positon: {}".format(self.get_gripper()))
         self.logger("Joint min limit: {}".format(self.default_min))
         self.logger("Joint max limit: {}".format(self.default_max))
         self.logger("Speed control:   {}".format(self.speed_control))
 
     def get_joints(self):
+        #self.logger("{}".format([angle.deg for i, angle in enumerate(self.angles)]))
         return [angle.deg for i, angle in enumerate(self.angles)]
 
     def get_joint_state(self):
         angles = [angle.deg for i, angle in enumerate(self.angles)]
         return [a for i,a in enumerate(angles)]
-    
+
     def get_servo_position(self, i):
-        """ Helper function that returns the true position value for the specified servo  """        
+        """ Helper function that returns the true position value for the specified servo  """
         return self.servos.servo[ServoIndex(i+1)].angle if not self.simulate_hardware else self.angles[i].deg
 
     def set_joint(self, i, val):
         """ Function that moves the physical motor/servo to the specified angle
-        
         :param i:   (int) joint index, indexing starts at zero
         :param val: (int) angle value to set the specified joint at
         """
-        
+
         # Check that the proper motor indexing is happenning
         if i > 6:
             self.logger("Warning - Motor indexing starts at 0")
             return
-        
+
         # In addition to the servo orientation on the physical robot, the angle displacements are different
         servo_val = self.joint_offsets[i] - val if self.orient_flip[i] else val + self.joint_offsets[i]
 
         # Some actuators could be mounted in a way requiring the rotation being reversed
         if self.flip_direction[i]: servo_val = 180-servo_val
-        
+
         # Check that the angle range is within limits of the actuator
         if not self.check_within_range(i, servo_val):
             self.logger("Warning. Servo value passed '{}' not within range. Cancelling new joint position".format(val))
-            return 
-        
+            return
+
         # Set the new position to the actuator (ServoIndex dictionary used for mapping)
         if self.verbose: self.logger("Changing joint:{} position to: {}".format(i+1, servo_val))
         if not self.simulate_hardware:
             self.update_servo(ServoIndex(i+1), servo_val)
-        
+
         angles = self.get_joints()
         angles[i] = val # Using 'val' instead of 'servo_val' because the IK state needs to be different from the physical state
         self.angles = [Angle(j, "deg") for j in angles]
-                    
+
         # Update the internal joint state
         self.forward_kinematics(angle_list(angles, "deg"))  # Update the new position of the end-effector
 
@@ -160,7 +162,7 @@ class RobotArm(object):
         """ Function that sets the joint states to the home position specified by the global variable __HOME__ """
         self.logger("Setting robot to home position")
         self.set_joints_speed_control(__HOME__) if self.speed_control else self.set_joints(__HOME__)
-    
+
     def ikhome(self):
         """ Function that sets the joint states to the home position specified by the global variable __IKHOME__ """
         self.set_joints_speed_control(__IKHOME__) if self.speed_control else self.set_joints(__IKHOME__)
@@ -170,14 +172,14 @@ class RobotArm(object):
 
         Parameters:
         ------------
-        new_angles    : (list) a numeric list of the new joint angles for the robot  
+        new_angles    : (list) a numeric list of the new joint angles for the robot
         """
         allpass=all([self.check_within_range(i, val) for i,val in enumerate(new_angles[0:6])])
         # Check that all joints are within limits of the actuators
         if not allpass:
             self.logger("Warning. Servo values passed {} not within range. Cancelling joint command".format(new_angles[0:6]))
-            return 
-        
+            return
+
         if self.speed_control:
             self.set_joints_speed_control(new_angles)
         else:
@@ -191,16 +193,15 @@ class RobotArm(object):
 
         Parameters:
         ------------
-        new_angles    : (list) A numeric list of the new joint angles for the robot  
+        new_angles    : (list) A numeric list of the new joint angles for the robot
         desired_speed : (num) Desired speed in RPM (rotations per minute)
         """
-     
         steps = 15 # Number of steps, can adjust as needed for smoother motion
-        
+
         # Calculate the time delay between steps based on the desired speed
         # Ensure the speed is within the maximum limit
         speed = min(desired_speed, self.joint_speed_limit)
-        
+
         # Calculate the delay between steps in seconds
         delay = 60.0 / (speed * steps) - 0.025
         delay = 0.001 # Or overrite it since the servos have their own incurred delay with witing a new position
@@ -208,7 +209,7 @@ class RobotArm(object):
         # Calculate the difference between current and target positions, for all servos
         # By getting the angle difference between the current and desired positions, we can get the position change for each incremental step
         step_sizes = [round(abs(int(new_angle) - int(abs(int(self.angles[i].deg)))) / steps) for i, new_angle in enumerate(new_angles)]
-        
+
         # Move all servos by steps
         for _ in range(steps):
 
@@ -247,47 +248,47 @@ class RobotArm(object):
             angles = self.get_joints()
             self.forward_kinematics(angle_list(angles, "deg"))  # Update the new position of the end-effector
             time.sleep(delay)
-    
+
     def update_servo(self, key, servo_val):
         """ Update the phsyical servo configured from the ServoKit, given specific index and angle value
-                
+
         Parameters:
         -----------
         key        : (int, str) Key for the servo indices
         servo_val  : (int) New angle position
         """
         try:
-            self.servos.servo[key].angle = servo_val 
+            self.servos.servo[key].angle = servo_val
         except ValueError as e:
             print(e)
 
     def validate_joint_angles(self, angles):
         """ Helper function that checks the sign for each of the joints to check it's between 0-180 
         and corrects them if they scale over
-        
+
         Parameters:
         -----------
         angles     : (list) Old list of Angle elements
-        
+
         Return:
         -----------
         angles     : (list) New list of Angle elements
         """
         for i, angle in enumerate(angles):
             angles[i] = enforcePositiveServoRange(angle)
-            
+
         return angles
 
     def check_within_range(self, i, val, radian=False):
         """ Helper function that determines whether the desired angle is within the joint limit range
         for the specified joint.
-        
+
         Parameters:
         -----------
         i      : (int) joint index, indexing starts at zero
         val    : (int) angle value to set the specified joint at
         radian : (bool) Optional parameter to check a value in radians instead of degrees, assumes degree
-        
+
         Returns True if within joint limit range, otherwise returns False
         """
         if not radian: val = val * np.pi / 180
@@ -298,64 +299,67 @@ class RobotArm(object):
         try:
             if isinstance(val, str):
                 if val.lower() in GRIPPER.keys():
-                    if self.verbose: self.logger("Setting gripper state: {}".format(val.lower()))
+                    if self.verbose: 
+                        self.logger("Setting gripper state: {}".format(val.lower()))
                     self.servos.servo[ServoIndex('gripper')].angle = GRIPPER[val.lower()]
-            else:    
-                if self.verbose: self.logger("Setting gripper position to: {}".format(val))
+            else:
+                if self.verbose: 
+                    self.logger("Setting gripper position to: {}".format(val))
+                #self.update_servo(9, val)
                 self.servos.servo[ServoIndex('gripper')].angle = val
         except:
             self.logger("Error in setting gripper position", True)
-        
+
     def get_gripper(self):
         return self.config.tool
-    
+
     def set_pose(self, target_pos):
         """ Set the end-effector to a new positionby giving [x,y,z] or [x,y,z,roll,pitch,yaw] command inputs. The 
         corresponding joint angles are computed from the inverse kinematics and the robot angles are updated accordingly
-        
+
         Parameters:
         -----------
         target_pos : (list) numeric list of [x,y,z]  or [x, y, z, roll, pitch, yaw] coordinates
-        
+
         """
         target_pos = [float(i) for i in target_pos] # Make sure values are not strings
         try:
             if len(target_pos) < 3:
                 if self.verbose: self.logger("Not enough inputs for pose. Need at least xyz")
-                return 
-            
+                return
+
             if len(target_pos) < 6:
                 prev_eul = [x.rad for x in self.config.euler_angles]
                 config_msg = Config(target_pos[:3], angle_list(prev_eul, "rad"))
             else:
                 config_msg = Config(target_pos[0:3], angle_list(target_pos[3:6], "deg"))
-    
+
             # Update gripper if command exists
             if len(target_pos) > 6: self.set_gripper(target_pos[6])
-            
+
             # Compute IK to find joint states
             self.angles = self.inverse_kinematics(config_msg)
-                
+
             # Update internal model
             self.update_current_pose(config_msg)
-            
+
             # Set servo joint positions
             self.set_joints([i.deg for i in self.angles])
 
         except:
             if self.verbose: self.logger("Error in setting pose. Check values are of float type and IK solver has no issues")
-                
-    def get_pose(self): 
+
+    def get_pose(self):
         """ Gets the current end-effector pose """
         self.logger("\nCurrent pose: {}".format(self.config))
-    
+
     def handle_delta(self, delta_pose):
-        """ Adjust the end effector position to a new relative position using the delta input. 
-            Expecting small inputs (0.01 increments)
-        
+        """ Adjust the end effector position to a new relative position using the delta input.
+            Caution: Expecting small inputs (0.001m to 0.01m) increments)
+
         Parameters:
         -----------
-        delta_pose : (list) numeric list of [x,y,z] or [x,y,z, roll, pitch, yaw] coordinates
+        delta_pose : (list) numeric list of [x,y,z] or [x,y,z, roll, pitch, yaw] coordinates in meters
         """
         print(delta_pose)
         try:
@@ -363,36 +367,35 @@ class RobotArm(object):
             delta_pose = [float(i) for i in delta_pose] # Make sure values are not strings
             target_xyz = [a + b for a, b in zip(self.config.cords[:3], delta_pose[:3])]
             target_euler = [a.deg + b for a, b in zip(self.config.euler_angles[:3], delta_pose[3:6])]
-        
+
             target_pose = target_xyz + target_euler
             if len(delta_pose) > 6: target_pos.append(delta_pose[6])
             return target_pose
-        except: 
+        except:
             self.logger("Error in handling delta command", warning=True)
             xyz = self.config.cords[:3]
             rpy = [i.deg for i in self.config.euler_angles[:3]]
             return xyz.append(rpy)
-        
+
     def handle_posture_delta(self, delta_pos):
-        
         try:
             # Get the static reference position on the first request
             if not self.reference_pos:
                 self.reference_pos = self.config.cords[:3] + self.config.euler_angles[:3]
-            
+
             delta_pos = [float(i) for i in delta_pos] # Make sure values are not strings
             target_xyz = [a + b for a, b in zip(self.reference_pos[:3], delta_pos[:3])]
             target_euler = [a.deg + b for a, b in zip(self.reference_pos[3:], delta_pos[3:6])]
-        
+
             target_pos = target_xyz + target_euler
         except:
-            if self.verbose: self.logger("Error in setting pose. Check values are of float type")  
-            target_pos = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]            
+            if self.verbose: self.logger("Error in setting pose. Check values are of float type")
+            target_pos = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
         if len(delta_pos) > 6:
             target_pos.append(delta_pos[6])
         return  target_pos
-  
+
     def update_current_pose(self, config):
         """ Helper function to update the current robot pose """
         self.config.cords = config.cords
@@ -417,9 +420,8 @@ class RobotArm(object):
         Returns:
             Config: returns the current position of the tool and the current euler angles
             as a Config.
-        
         """
-        if (angles == None): 
+        if (angles == None):
             angles = self.angles
 
         T0g = dot_product_chain_of_matrices(self.get_transformations(angles))

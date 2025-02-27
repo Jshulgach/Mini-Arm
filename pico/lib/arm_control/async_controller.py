@@ -389,6 +389,7 @@ class AsyncController(object):
         else:
             rgb_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").replace(";","").split(",")
             rgb_val = list(map(int, rgb_str))
+            if self.verbose: self.logger("Setting new values: {}".format(rgb_val))
             self.rgb.set_color(rgb_val)
 
     async def set_verbose_mode(self, cmd):

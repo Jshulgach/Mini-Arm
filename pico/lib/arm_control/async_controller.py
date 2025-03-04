@@ -42,6 +42,7 @@ class AsyncController(object):
         simulate_hardware : (bool)    Allow physical control of hardware
         use_wifi          : (bool)    Enable/Disable server
         use_serial        : (bool)    Enable/Disable serial command parsing
+        baudrate          : (int)     Baudrate for serial communication
         use_uart          : (bool)    Enable/Disable UART messasing with usb port. False requires using UART pins
         speed_control     : (bool)    Enable/Disable smooth robot joint setting
         verbose           : (bool)    Enable/disable verbose output text to the terminal
@@ -53,6 +54,7 @@ class AsyncController(object):
                        simulate_hardware=False,
                        use_wifi=False,
                        use_serial=False,
+                       baudrate=9600,
                        use_uart=False,
                        speed_control=False,
                        command_delimiter=";",
@@ -96,7 +98,7 @@ class AsyncController(object):
 
         # Establish peripheral connection types
         if self.use_wifi: self.server = self.connect_to_wifi()
-        if self.use_serial: self.serial = USBSerialReader(use_UART=self.use_uart, TERMINATOR=self.command_delimiter, verbose=self.verbose)
+        if self.use_serial: self.serial = USBSerialReader(use_UART=self.use_uart, baudrate=baudrate, TERMINATOR=self.command_delimiter, verbose=self.verbose)
 
         self.logo() # Show awesome logo
         #if self.verbose: self.logger("{} object created!".format(self.name))

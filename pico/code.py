@@ -40,8 +40,8 @@ from arm_control.async_controller import AsyncController as MiniArm
 # Before creating the MiniArm object, we can set up some RP2040 properties
 # We will change the default processor speed from 125MHz to 200MHz (Overclock)
 # Note: This is only possible with versions of CircuitPython over 8.1.0
-#import microcontroller
-#microcontroller.cpu.frequency = 200000000  # 200MHz
+import microcontroller
+microcontroller.cpu.frequency = 200000000  # 200MHz
 
         
 if __name__ == "__main__":
@@ -51,7 +51,9 @@ if __name__ == "__main__":
     miniarm = MiniArm('Controller',
                       simulate_hardware=False,
                       use_serial=True,
+                      baudrate=115200,
                       speed_control=False,
+                      command_delimiter='\n', # ENTER key
                       verbose=False,
                       )
     try:

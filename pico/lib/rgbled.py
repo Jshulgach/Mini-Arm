@@ -3,14 +3,14 @@ import digitalio
 import board
 
 class RGBLED:
-    def __init__(self, rpin=board.GP3, gpin=board.GP4, bpin=board.GP5, freq=1000, brightness=0.5, set_color=None):      
+    def __init__(self, rpin=board.GP11, gpin=board.GP12, bpin=board.GP13, led_out=board.GP10, freq=1000, brightness=0.5, set_color=None):      
         self.brightness = brightness
         self.led = {'Red':   pwmio.PWMOut(rpin, frequency=freq, duty_cycle=self.convert(0)),
                     'Green': pwmio.PWMOut(gpin, frequency=freq, duty_cycle=self.convert(0)),
                     'Blue':  pwmio.PWMOut(bpin, frequency=freq, duty_cycle=self.convert(0))
                     }
         # RGB LED configuration, using pin2 as the 3.3V output source, and 3-5 as input GND pins
-        self.rgb_out = digitalio.DigitalInOut(board.GP2)
+        self.rgb_out = digitalio.DigitalInOut(led_out)
         self.rgb_out.direction = digitalio.Direction.OUTPUT
         self.rgb_out.value = True
         self.all_off()

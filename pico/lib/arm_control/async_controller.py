@@ -20,7 +20,7 @@ from arm_utils.armTransforms import create_circular_trajectory as circ_traj
 #from arm_utils.armTransforms import create_depth_trajectory as depth_traj
 
 __author__ = "Jonathan Shulgach"
-__version__ = "1.4.6"
+__version__ = "1.4.7"
 
 MAXBUF = 512
 QUEUE_BUFFER = 10        # Maximum number of commands to hold

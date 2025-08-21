@@ -34,10 +34,10 @@ class MiniArmClient(object):
         # Set the debug mode to match verbose
         #self.send_message(f"debug:{self.verbose}")
 
-        self.home() # Set to home position upon successful connection
+        #self.home() # Set to home position upon successful connection
 
         # Move to a new pose
-        self.send_message('set_pose:[0.135, 0.000, 0.22]')
+        #self.send_message('set_pose:[0.135, 0.000, 0.22]')
         #self.send_message('set_delta_pose:[0.0,0.0,-0.02]')
 
         self.logger(f"{self.name} initialized\n")
@@ -83,7 +83,8 @@ class MiniArmClient(object):
                 if self.s.in_waiting > 0:
                     msg = ""
                     while self.s.in_waiting > 0:
-                        msg += self.s.readline().decode().strip()
+                        msg += self.s.readline().decode()
+                        #msg += self.s.readline().decode().strip()
                         time.sleep(0.01) # Mandatory 10ms delay to prevent buffer overflow
                     return msg
             except serial.SerialException as e:
@@ -123,6 +124,15 @@ class MiniArmClient(object):
     def home(self):
         """ Sends the robot arm to the home position"""
         self.send_message("home;")
+
+    def get_info(self):
+        """ Sends the 'info' command to the robot arm"""
+        self.send_message("info;")
+        info = self.get_buffer()
+        if info:
+            print(info)
+        else:
+            print("No info data to read from")
 
     def send_ctrl_c(self):
         """ Sends the Ctrl+C command to the robot arm"""

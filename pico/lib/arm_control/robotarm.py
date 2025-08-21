@@ -1,8 +1,4 @@
-
 import time
-import busio
-import board
-from adafruit_servokit import ServoKit
 from arm_utils.armTransforms import *
 
 __author__ = "Jonathan Shulgach"
@@ -83,7 +79,10 @@ class RobotArm(object):
         # Create references to the servo hardware
         self.servos = None
         if not self.simulate_hardware:
-            # necessary to create the custom busio.I2C object instead of the ServoKit default due to some dormant library issue 
+            # necessary to create the custom busio.I2C object instead of the ServoKit default due to some dormant library issue
+            import busio
+            import board
+            from adafruit_servokit import ServoKit
             i2c = busio.I2C(board.GP1, board.GP0)
             self.servos = ServoKit(channels=16, i2c=i2c)
 

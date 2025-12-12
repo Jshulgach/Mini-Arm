@@ -3,7 +3,7 @@ import serial
 import threading
 import numpy as np
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 __author__ = 'Jonathan Shulgach'
 
 
@@ -157,5 +157,101 @@ class MiniArmClient(object):
         mode    (bool, str): The debug mode to set (true/false or 'on'/'off'
         """
         self.send_message(f"debug:{mode}")
+
+    def send(self, command):
+        """Convenience method to send commands (alias for send_message)
+        
+        Parameters:
+        -----------
+        command (str): Command string to send to Mini-Arm
+        """
+        self.send_message(command)
+
+
+def main():
+    """Command-line interface for Mini-Arm control"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        description='Mini-Arm Robot Control Interface',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Connect and get help
+  python mini_arm.py --port COM3
+  
+  # Send a command
+  python mini_arm.py --port COM3 --command "get_pose"
+  
+  # Move to position
+  python mini_arm.py --port COM3 --command "set_pose:[0.135,0.0,0.22]"
+  
+  # Interactive mode
+  python mini_arm.py --port COM3 --interactive
+
+For more examples, see the examples/ directory.
+        """
+    )
+    
+    parser.add_argument('--port', type=str, default='COM3',
+                       help='Serial port (default: COM3, Linux: /dev/ttyACM0)')
+    parser.add_argument('--baudrate', type=int, default=9600,
+                       help='Baudrate for serial connection (default: 9600)')
+    parser.add_argument('--command', type=str, default='help',
+                       help='Command to send to Mini-Arm (default: help)')
+    parser.add_argument('--interactive', action='store_true',
+                       help='Enter interactive mode for sending multiple commands')
+    parser.add_argument('--verbose', action='store_true',
+                       help='Enable verbose output')
+    
+    args = parser.parse_args()
+    
+    # Connect to Mini-Arm
+    print(f"Connecting to Mini-Arm on {args.port}...")
+    client = MiniArmClient(port=args.port, baudrate=args.baudrate, verbose=args.verbose)
+    
+    if not client.connected:
+        print("❌ Failed to connect to Mini-Arm")
+        print("   Check port name and ensure device is connected")
+        return 1
+    
+    print(f"✅ Connected successfully!\n")
+    
+    if args.interactive:
+        print("Interactive mode - type 'exit' or 'quit' to exit")
+        print("Type 'help' to see available commands\n")
+        
+        while True:
+            try:
+                cmd = input("mini-arm> ").strip()
+                if cmd.lower() in ['exit', 'quit', 'q']:
+                    break
+                if cmd:
+                    client.send(cmd)
+                    time.sleep(0.1)
+                    # Read response
+                    response = client.get_buffer()
+                    if response:
+                        print(response)
+            except KeyboardInterrupt:
+                print("\n")
+                break
+    else:
+        # Send single command
+        client.send(args.command)
+        time.sleep(0.5)
+        # Read response
+        response = client.get_buffer()
+        if response:
+            print(response)
+    
+    print("\n✅ Disconnecting...")
+    client.disconnect()
+    return 0
+
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(main())
 
 

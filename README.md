@@ -39,11 +39,32 @@ These install instructions were tailored using a Windows 10 OS. There are also s
 - [Acknowledgements](#acknowledgements)
 
 # Repository Structure 
-This GitHub repository contains Installation and Quick Start instructions for the Mni Arm project. Here is a description of the repository structure:
-* `miniarm_ros` - Contains ROS packages for the Mini Arm
-* `pico` - Contains CircuitPython firmware and code for the Mini Arm using a Raspberry Pico microcontroller
-* `tests` - Python test scripts for the package
-* `XboxClient` - Teleop script to run on a PC with a connected Xbox controller
+
+This repository contains everything needed to build, program, and control the Mini-Arm robot:
+
+```
+Mini-Arm/
+├── examples/               # Usage examples and demos
+│   ├── 01_basic_control/  # Simple control scripts
+│   ├── 02_trajectory/     # Trajectory execution
+│   ├── 02_xbox_teleop/    # Xbox controller teleop
+│   └── 03_analysis/       # Motion analysis tools
+├── tests/                 # Test scripts organized by category
+│   ├── hardware/          # Serial & servo tests
+│   ├── kinematics/        # IK solver tests
+│   ├── networking/        # Network communication tests
+│   └── visualization/     # 3D visualization tests
+├── pico/                  # CircuitPython firmware for Pico
+├── miniarm_ros/           # ROS2 packages for visualization
+├── assets/                # Images, models, documentation
+├── mini_arm.py            # Python client library
+└── requirements.txt       # Python dependencies
+```
+
+**Key files:**
+- `mini_arm.py` - MiniArmClient class for serial communication
+- `pico/code.py` - Main firmware running on Raspberry Pi Pico
+- `requirements.txt` - Python package dependencies
 
 ## Installation
 
@@ -88,15 +109,43 @@ This GitHub repository contains Installation and Quick Start instructions for th
    ![](assets/wiring.PNG)
 
 ---
-## Demos
+## Quick Start
 
-A `MiniArmClient` class is included to make it easy to communicate and send commands to the Mini Arm. As an example, we can send a `help` command to give us a list of available commands.
+### Command Line Interface
+
+The `mini_arm.py` module provides a simple CLI:
+
+```bash
+# Get list of available commands
+python mini_arm.py --port COM3
+
+# Send a specific command
+python mini_arm.py --port COM3 --command "get_pose"
+
+# Interactive mode
+python mini_arm.py --port COM3 --interactive
+```
+
+### Python API
+
+Use the `MiniArmClient` class in your own scripts:
+
 ```python
 from mini_arm import MiniArmClient
-client = MiniArmClient(port='COM3', baudrate=9600, verbose=True) # Windows port example, use '/dev/ttyACM0' for Linux
-client.send('help')
+
+# Connect to Mini-Arm
+client = MiniArmClient(port='COM3', baudrate=9600, verbose=True)
+
+# Send commands
+client.send('help')        # List available commands
+client.send('home')        # Move to home position
+client.send('get_pose')    # Get current position
+client.send('set_pose:[0.135,0.0,0.22]')  # Move to position
 ```
-The output should return all the supported commands with their descriptions:
+
+### Available Commands
+
+The Mini-Arm supports the following commands:
 ``` 
 ================================= List of commands =============================================
  movemotor   |  MOTOR VALUE     | // Moves motor A to absolute position B (deg)
@@ -124,20 +173,51 @@ The output should return all the supported commands with their descriptions:
 ```
 
 ---
-### Xbox Teleop
+## Examples
+
+See the `examples/` directory for detailed usage examples:
+
+### [Basic Control](examples/01_basic_control/)
+- `basic_demo.py` - Connect and send simple commands
+- `position_control.py` - Move end effector to XYZ coordinates
+- `gripper_control.py` - Open/close gripper
+
+### [Trajectory Execution](examples/02_trajectory/)
+- `circle_trajectory.py` - Execute circular trajectories in 3D space
+
+### [Xbox Controller Teleop](examples/02_xbox_teleop/)
 ![](assets/xboxcontroller.png)
-When the arm first turns on, the LED will change to green to indicate successful connection to the network. A blue light indicates a successful connection to the server with a client. Open the `xbox-client.py` file and set `COMM_TYPE` to the same type set for Mini Arm in the `settings.toml` file. Plug in a controller, open a terminal in the directory containing the `xbox-client.py` file, then run the python file:
-```
-python xbox-client.py
+
+Control the arm with an Xbox controller in real-time:
+
+```bash
+cd examples/02_xbox_teleop
+python xbox-client.py --port COM3
 ```
 
-### Face Detection
+**Features:**
+- Real-time end effector control via joysticks
+- Gripper control with triggers
+- LED status indicators (green = connected)
 
-TBD
+### [Motion Analysis](examples/03_analysis/)
+- `trajectory_command.py` - Generate and execute trajectories
+- `trajectory_comparison.py` - Compare commanded vs actual motion
+- `convert_c3d_to_csv.py` - Process motion capture data
+- `compute_alignment_transform.py` - Align coordinate frames
+
+---
 
 ## Tests
 
-A variefy of test scripts have been created to validate functionality of a variety of components. These tests can be found in the `tests` folder, although they are somewhat unorganized...
+Test scripts are organized by functionality in the `tests/` directory:
+
+- **hardware/** - Serial communication and servo control tests
+- **kinematics/** - Inverse kinematics solver validation
+- **networking/** - TCP/IP and camera streaming tests  
+- **visualization/** - 3D rendering and simulation tests
+
+See [tests/README.md](tests/README.md) for details on running tests.
 
 ## Multimodal agentic AI Integration
 

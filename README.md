@@ -9,10 +9,13 @@
 </div>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-![Python](https://img.shields.io/badge/python-3.10-blue)
-![GitHub Repo stars](https://img.shields.io/github/stars/JShulgach/Mini-Arm)
+[![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub Repo stars](https://img.shields.io/github/stars/JShulgach/Mini-Arm)](https://github.com/Jshulgach/Mini-Arm/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/JShulgach/Mini-Arm)](https://github.com/Jshulgach/Mini-Arm/network/members)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://jshulgach.github.io/Mini-Arm/)
+[![GitHub last commit](https://img.shields.io/github/last-commit/JShulgach/Mini-Arm)](https://github.com/Jshulgach/Mini-Arm/commits/main)
 
-
+**[📖 Documentation](https://jshulgach.github.io/Mini-Arm/)** | **[🚀 Quick Start](https://jshulgach.github.io/Mini-Arm/getting_started/quickstart.html)** | **[🔧 Hardware Guide](https://jshulgach.github.io/Mini-Arm/hardware/assembly.html)**
 
 The Mini Arm is a miniature version of the [Desktop-Arm](https://github.com/Jshulgach/Desktop-Arm) project, a portable 6DOF 3D-printed open-source robot arm. Plug in a USB cable and immediately enjoy these features:
 
@@ -44,67 +47,79 @@ This repository contains everything needed to build, program, and control the Mi
 
 ```
 Mini-Arm/
-├── examples/               # Usage examples and demos
+├── src/mini_arm/          # Python package (pip installable)
+│   ├── __init__.py
+│   ├── client.py          # MiniArmClient class
+│   └── __main__.py        # CLI entry point
+├── firmware/              # Embedded firmware
+│   └── circuitpython/     # CircuitPython for Raspberry Pi Pico
+│       ├── code.py        # Main firmware
+│       ├── lib/           # CircuitPython libraries
+│       └── *.uf2          # Pre-built firmware images
+├── hardware/              # Physical build resources
+│   ├── cad/solidworks/    # SolidWorks CAD files (.SLDPRT, .SLDASM)
+│   ├── stl/               # 3D printable STL files
+│   └── bom/               # Bill of Materials
+├── ros2/                  # ROS2 packages
+│   ├── miniarm_description/   # URDF & meshes
+│   ├── miniarm_moveit_config/ # MoveIt configuration
+│   └── miniarm_servo/         # Real-time servo control
+├── examples/              # Usage examples and demos
 │   ├── 01_basic_control/  # Simple control scripts
 │   ├── 02_trajectory/     # Trajectory execution
 │   ├── 02_xbox_teleop/    # Xbox controller teleop
 │   └── 03_analysis/       # Motion analysis tools
-├── tests/                 # Test scripts organized by category
-│   ├── hardware/          # Serial & servo tests
-│   ├── kinematics/        # IK solver tests
-│   ├── networking/        # Network communication tests
-│   └── visualization/     # 3D visualization tests
-├── pico/                  # CircuitPython firmware for Pico
-├── miniarm_ros/           # ROS2 packages for visualization
-├── assets/                # Images, models, documentation
-├── mini_arm.py            # Python client library
+├── tests/                 # Test scripts
+├── docs/                  # Documentation (Sphinx)
+├── pyproject.toml         # Python package configuration
 └── requirements.txt       # Python dependencies
 ```
 
-**Key files:**
-- `mini_arm.py` - MiniArmClient class for serial communication
-- `pico/code.py` - Main firmware running on Raspberry Pi Pico
-- `requirements.txt` - Python package dependencies
+**Key components:**
+- `src/mini_arm/` - Pip-installable Python package for controlling the robot
+- `firmware/circuitpython/` - CircuitPython firmware for the Raspberry Pi Pico
+- `hardware/` - CAD files, STL meshes, and bill of materials
+- `ros2/` - ROS2 packages for visualization and advanced control
 
 ## Installation
 
-### Software:
+### Python Package
 
-[//]: # (1. It is recommended to use a virtual environment to manage dependencies. To create a new virtual environment with [anaconda]&#40;https://www.anaconda.com/products/individual&#41;, use the following command:)
-[//]: # (   ```bash)
-[//]: # (   conda create -n miniarm python=3.10)
-[//]: # (   conda activate miniarm)
-[//]: # (   ```)
-[//]: # (2. Download the repository using git:)
-[//]: # (   ```bash)
-[//]: # (   git clone https://github.com/Jshulgach/Mini-Arm.git)
-[//]: # (   cd Mini-Arm)
-[//]: # (   ```)
-[//]: # (3. To install dependencies, use the provided requirements file:)
-[//]: # (   ```bash)
-[//]: # (   pip install -r requirements.txt)
-[//]: # (   ```)
+Install the Mini-Arm Python package directly from GitHub:
 
+```bash
+# Install from GitHub
+pip install git+https://github.com/Jshulgach/Mini-Arm.git
 
-1. Choose Pico firmware
+# Or clone and install in development mode
+git clone https://github.com/Jshulgach/Mini-Arm.git
+cd Mini-Arm
+pip install -e .
+```
 
-    We have provided CircuitPython firmware for both the Pico and Pico2! Choose the right uf2 file for your Pico version, or download the [CircuitPython](https://circuitpython.org/) latest firmware for the [Pico](https://circuitpython.org/board/raspberry_pi_pico/) or [Pico 2](https://circuitpython.org/board/raspberry_pi_pico_2/). 
+### Firmware Setup
 
-2. Move/drag the uf2 file to the Pico drive.
-   - When you plug in the Pico for the first time, you should see a new drive appear on your computer with the Poci in bootloader mode. You can always access this by pressing the BOOTSEL button while plugging in the Pico.
+1. **Choose Pico firmware**
+
+    We have provided CircuitPython firmware for both the Pico and Pico2! Find the `.uf2` files in `firmware/circuitpython/`, or download the latest [CircuitPython](https://circuitpython.org/) firmware for the [Pico](https://circuitpython.org/board/raspberry_pi_pico/) or [Pico 2](https://circuitpython.org/board/raspberry_pi_pico_2/). 
+
+2. **Flash the firmware**
+   - When you plug in the Pico for the first time with the BOOTSEL button held, a new drive will appear on your computer.
    ![](assets/pico_first_time.PNG)
-   - Move/drag the uf2 file to the Pico drive. The Pico will automatically reboot and the LED will turn green to indicate successful flashing.
+   - Move/drag the `.uf2` file to the Pico drive. The Pico will automatically reboot.
 
-3. Replace the contents of the `code.py` and `lib` folder to the Pico drive.
-   + The `code.py` file contains the main code to run the Mini Arm. Open this file to enable/disable certain settings.
+3. **Copy the firmware files**
+   - Copy the contents of `firmware/circuitpython/code.py` and `firmware/circuitpython/lib/` to the Pico drive.
 
-### Hardware:
+### Hardware Assembly
 
-1. Building the arm
-   - The full list of parts needed to assemble the arm can be found in the [B.O.M](https://github.com/Jshulgach/Desktop-Arm/blob/master/doc/bom.xlsx).
-   - Files for 3D printing can be found on [HowToMechatronics](https://thangs.com/designer/HowToMechatronics/3d-model/Robotic%20Arm%203D%20Model-38899) with [assembly instructions](https://howtomechatronics.com/tutorials/arduino/diy-arduino-robot-arm-with-smartphone-control/)
+1. **Building the arm**
+   - Parts list available in [`hardware/bom/bom.xlsx`](hardware/bom/bom.xlsx)
+   - STL files for 3D printing in [`hardware/stl/`](hardware/stl/)
+   - SolidWorks CAD source files in [`hardware/cad/solidworks/`](hardware/cad/solidworks/)
+   - Assembly instructions at [HowToMechatronics](https://howtomechatronics.com/tutorials/arduino/diy-arduino-robot-arm-with-smartphone-control/)
 
-2. Electrical wiring
+2. **Electrical wiring**
 
    ![](assets/wiring.PNG)
 
@@ -113,17 +128,20 @@ Mini-Arm/
 
 ### Command Line Interface
 
-The `mini_arm.py` module provides a simple CLI:
+After installing the package, use the CLI:
 
 ```bash
 # Get list of available commands
-python mini_arm.py --port COM3
+mini-arm --port COM3
+
+# Or run as a module
+python -m mini_arm --port COM3
 
 # Send a specific command
-python mini_arm.py --port COM3 --command "get_pose"
+mini-arm --port COM3 --command "get_pose"
 
 # Interactive mode
-python mini_arm.py --port COM3 --interactive
+mini-arm --port COM3 --interactive
 ```
 
 ### Python API
@@ -138,9 +156,15 @@ client = MiniArmClient(port='COM3', baudrate=9600, verbose=True)
 
 # Send commands
 client.send('help')        # List available commands
-client.send('home')        # Move to home position
+client.home()              # Move to home position
 client.send('get_pose')    # Get current position
-client.send('set_pose:[0.135,0.0,0.22]')  # Move to position
+client.set_pose(0.135, 0.0, 0.22)  # Move to position
+
+# Context manager support
+with MiniArmClient(port='COM3') as client:
+    client.home()
+    pose = client.get_current_pose()
+    print(f"Current pose: {pose}")
 ```
 
 ### Available Commands
@@ -227,7 +251,8 @@ TBD
 Robot control cana also be done through the Unity version of the "AJ" GUI v1 (Link coming soon), or an SSH terminal to the robot. FOR TCP/IP, quickest way using a python terminal:
 
 ## ROS2 Robot Visualizer
-The Mini Arm can be visualized in RViz2 using the included ROS2 packages. Refer to the [build instructions](/miniarm_ros/README.md) for more information.
+
+The Mini Arm can be visualized in RViz2 using the included ROS2 packages in the `ros2/` directory. Refer to the [build instructions](ros2/README.md) for more information.
 
 <!-- ![](assets/rviz_view.png) -->
 <div align=center>

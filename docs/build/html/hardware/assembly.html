@@ -1,0 +1,591 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Wiring Guide" href="wiring.html"><link rel="prev" title="3D Printing Guide" href="3d_printing.html">
+        <link rel="prefetch" href="../_static/mini-arm-logo.png" as="image">
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"><!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
+        <title>Assembly Guide - Mini-Arm 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=8dab3a3b" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f2f2f2;
+  --color-code-foreground: #1e1e1e;
+  --color-brand-primary: #1abc9c;
+  --color-brand-content: #1abc9c;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #1abc9c;
+  --color-brand-content: #1abc9c;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  --color-brand-primary: #1abc9c;
+  --color-brand-content: #1abc9c;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle site navigation sidebar">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc" aria-label="Toggle table of contents sidebar">
+<label class="overlay sidebar-overlay" for="__navigation"></label>
+<label class="overlay toc-overlay" for="__toc"></label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <span class="icon"><svg><use href="#svg-menu"></use></svg></span>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../index.html"><div class="brand">Mini-Arm 1.0.0 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../index.html">
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/mini-arm-logo.png" alt="Logo"/>
+  </div>
+  
+  <span class="sidebar-brand-text">Mini-Arm 1.0.0 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/quickstart.html">Quickstart Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/configuration.html">Configuration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hardware</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="bom.html">Bill of Materials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="3d_printing.html">3D Printing Guide</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Assembly Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="wiring.html">Wiring Guide</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/basic_control.html">Basic Control</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/trajectories.html">Trajectory Planning</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/xbox_teleop.html">Xbox Controller Teleoperation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/face_tracking.html">Face Tracking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/ai_integration.html">AI Integration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api/modules.html">API Reference</a><input aria-label="Toggle navigation of API Reference" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/client.html">MiniArmClient API</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">ROS2 Integration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../ros2/setup.html">ROS2 Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ros2/visualization.html">RViz Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ros2/moveit.html">MoveIt2 Integration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Resources</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../resources/faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/hardware/assembly.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle" aria-label="Toggle Light / Dark / Auto color theme">
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <span class="icon"><svg><use href="#svg-toc"></use></svg></span>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="assembly-guide">
+<h1>Assembly Guide<a class="headerlink" href="#assembly-guide" title="Link to this heading">¶</a></h1>
+<p>Step-by-step instructions to build your Mini-Arm.</p>
+<section id="before-you-start">
+<h2>Before You Start<a class="headerlink" href="#before-you-start" title="Link to this heading">¶</a></h2>
+<p><strong>Required Tools:</strong></p>
+<ul class="simple">
+<li><p>Phillips screwdriver (small)</p></li>
+<li><p>Hex keys (2mm, 2.5mm)</p></li>
+<li><p>Needle-nose pliers</p></li>
+<li><p>Wire strippers</p></li>
+<li><p>Soldering iron (optional, for upgrades)</p></li>
+</ul>
+<p><strong>Verify Parts:</strong></p>
+<p>Check all 3D printed parts and hardware against the <a class="reference internal" href="bom.html"><span class="doc">Bill of Materials</span></a>.</p>
+</section>
+<section id="step-1-base-assembly">
+<h2>Step 1: Base Assembly<a class="headerlink" href="#step-1-base-assembly" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_static/assembly/step1_base.jpg"><img alt="_static/assembly/step1_base.jpg" class="align-center" src="_static/assembly/step1_base.jpg" style="width: 400px;" />
+</a>
+<ol class="arabic simple">
+<li><p>Insert 608 bearing into the base plate center hole</p></li>
+<li><p>Attach base servo (J0) using M2 x 8mm screws</p></li>
+<li><p>Press-fit the servo horn into the rotating base plate</p></li>
+<li><p>Connect base plate to servo with the servo horn screw</p></li>
+</ol>
+</section>
+<section id="step-2-shoulder-joint">
+<h2>Step 2: Shoulder Joint<a class="headerlink" href="#step-2-shoulder-joint" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_static/assembly/step2_shoulder.jpg"><img alt="_static/assembly/step2_shoulder.jpg" class="align-center" src="_static/assembly/step2_shoulder.jpg" style="width: 400px;" />
+</a>
+<ol class="arabic simple">
+<li><p>Install shoulder servo (J1) into the shoulder mount</p></li>
+<li><p>Secure with M2 x 8mm screws</p></li>
+<li><p>Attach the shoulder bracket to the base plate</p></li>
+<li><p>Install 608 bearing for support</p></li>
+</ol>
+</section>
+<section id="step-3-upper-arm">
+<h2>Step 3: Upper Arm<a class="headerlink" href="#step-3-upper-arm" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_static/assembly/step3_upper_arm.jpg"><img alt="_static/assembly/step3_upper_arm.jpg" class="align-center" src="_static/assembly/step3_upper_arm.jpg" style="width: 400px;" />
+</a>
+<ol class="arabic simple">
+<li><p>Mount elbow servo (J2) in the upper arm housing</p></li>
+<li><p>Secure with M2 x 8mm screws</p></li>
+<li><p>Connect upper arm to shoulder servo horn</p></li>
+<li><p>Ensure smooth rotation - adjust if binding</p></li>
+</ol>
+</section>
+<section id="step-4-forearm">
+<h2>Step 4: Forearm<a class="headerlink" href="#step-4-forearm" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_static/assembly/step4_forearm.jpg"><img alt="_static/assembly/step4_forearm.jpg" class="align-center" src="_static/assembly/step4_forearm.jpg" style="width: 400px;" />
+</a>
+<ol class="arabic simple">
+<li><p>Install wrist servos (J3, J4) in forearm housing</p></li>
+<li><p>Route servo wires through the forearm channel</p></li>
+<li><p>Connect forearm to elbow servo horn</p></li>
+<li><p>Test range of motion</p></li>
+</ol>
+</section>
+<section id="step-5-wrist-gripper">
+<h2>Step 5: Wrist &amp; Gripper<a class="headerlink" href="#step-5-wrist-gripper" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_static/assembly/step5_wrist.jpg"><img alt="_static/assembly/step5_wrist.jpg" class="align-center" src="_static/assembly/step5_wrist.jpg" style="width: 400px;" />
+</a>
+<ol class="arabic simple">
+<li><p>Mount wrist yaw servo (J5) in wrist housing</p></li>
+<li><p>Attach gripper servo (J6) to gripper base</p></li>
+<li><p>Install gripper fingers with M2 x 12mm screws</p></li>
+<li><p>Connect wrist assembly to forearm</p></li>
+</ol>
+</section>
+<section id="step-6-electronics">
+<h2>Step 6: Electronics<a class="headerlink" href="#step-6-electronics" title="Link to this heading">¶</a></h2>
+<a class="reference internal image-reference" href="_static/assembly/step6_electronics.jpg"><img alt="_static/assembly/step6_electronics.jpg" class="align-center" src="_static/assembly/step6_electronics.jpg" style="width: 400px;" />
+</a>
+<ol class="arabic simple">
+<li><p>Mount Raspberry Pi Pico to electronics bracket</p></li>
+<li><p>Mount PCA9685 servo driver next to Pico</p></li>
+<li><p>Connect I2C wires:
+- Pico GP0 (SDA) → PCA9685 SDA
+- Pico GP1 (SCL) → PCA9685 SCL
+- Pico 3.3V → PCA9685 VCC
+- Pico GND → PCA9685 GND</p></li>
+<li><p>Connect servo wires to PCA9685 channels 0-6</p></li>
+<li><p>Connect 5V power supply to PCA9685 V+ terminal</p></li>
+</ol>
+</section>
+<section id="wiring-diagram">
+<h2>Wiring Diagram<a class="headerlink" href="#wiring-diagram" title="Link to this heading">¶</a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>                ┌─────────────────┐
+                │  Raspberry Pi   │
+                │     Pico 2      │
+                │                 │
+                │ GP0 (SDA) ──────┼──────┐
+                │ GP1 (SCL) ──────┼────┐ │
+                │ 3.3V ───────────┼──┐ │ │
+                │ GND ────────────┼┐ │ │ │
+                └─────────────────┘│ │ │ │
+                                   │ │ │ │
+┌──────────────────────────────────┼─┼─┼─┼──┐
+│  PCA9685 Servo Driver            │ │ │ │  │
+│                                  │ │ │ │  │
+│  GND ────────────────────────────┘ │ │ │  │
+│  VCC ──────────────────────────────┘ │ │  │
+│  SCL ────────────────────────────────┘ │  │
+│  SDA ──────────────────────────────────┘  │
+│                                           │
+│  CH0 ─── J0 (Base)                        │
+│  CH1 ─── J1 (Shoulder)                    │
+│  CH2 ─── J2 (Elbow)                       │
+│  CH3 ─── J3 (Wrist Roll)                  │
+│  CH4 ─── J4 (Wrist Pitch)                 │
+│  CH5 ─── J5 (Wrist Yaw)                   │
+│  CH6 ─── Gripper                          │
+│                                           │
+│  V+ ──── 5V Power Supply (+)              │
+│  GND ─── 5V Power Supply (-)              │
+└───────────────────────────────────────────┘
+</pre></div>
+</div>
+</section>
+<section id="step-7-cable-management">
+<h2>Step 7: Cable Management<a class="headerlink" href="#step-7-cable-management" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Bundle servo wires with cable ties</p></li>
+<li><p>Route wires along the arm structure</p></li>
+<li><p>Leave slack at each joint for full range of motion</p></li>
+<li><p>Secure electronics mount to the base</p></li>
+</ol>
+</section>
+<section id="step-8-firmware-installation">
+<h2>Step 8: Firmware Installation<a class="headerlink" href="#step-8-firmware-installation" title="Link to this heading">¶</a></h2>
+<ol class="arabic simple">
+<li><p>Connect Pico via USB while holding BOOTSEL button</p></li>
+<li><p>Drag CircuitPython UF2 to the RPI-RP2 drive</p></li>
+<li><p>Copy contents of <code class="docutils literal notranslate"><span class="pre">pico/</span></code> folder to CIRCUITPY drive:</p></li>
+</ol>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>CIRCUITPY/
+├── code.py
+├── lib/
+│   ├── adafruit_pca9685.mpy
+│   ├── adafruit_motor/
+│   └── mini_arm/
+└── config.json
+</pre></div>
+</div>
+</section>
+<section id="step-9-calibration">
+<h2>Step 9: Calibration<a class="headerlink" href="#step-9-calibration" title="Link to this heading">¶</a></h2>
+<p>Run the calibration script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>mini_arm.calibrate
+</pre></div>
+</div>
+<p>This will:</p>
+<ol class="arabic simple">
+<li><p>Move each joint to find limits</p></li>
+<li><p>Set servo center positions</p></li>
+<li><p>Save calibration to the Pico</p></li>
+</ol>
+</section>
+<section id="step-10-final-test">
+<h2>Step 10: Final Test<a class="headerlink" href="#step-10-final-test" title="Link to this heading">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">mini_arm</span><span class="w"> </span><span class="kn">import</span> <span class="n">MiniArm</span>
+
+<span class="n">arm</span> <span class="o">=</span> <span class="n">MiniArm</span><span class="p">()</span>
+<span class="n">arm</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+
+<span class="c1"># Test each joint</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Testing joint </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">arm</span><span class="o">.</span><span class="n">set_joint</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">30</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">arm</span><span class="o">.</span><span class="n">set_joint</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">30</span><span class="p">)</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">arm</span><span class="o">.</span><span class="n">set_joint</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Test gripper</span>
+<span class="n">arm</span><span class="o">.</span><span class="n">gripper_open</span><span class="p">()</span>
+<span class="n">arm</span><span class="o">.</span><span class="n">gripper_close</span><span class="p">()</span>
+
+<span class="c1"># Home position</span>
+<span class="n">arm</span><span class="o">.</span><span class="n">home</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Assembly complete! 🎉&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<p><strong>Servo not moving:</strong></p>
+<ul class="simple">
+<li><p>Check wiring connections</p></li>
+<li><p>Verify power supply is connected</p></li>
+<li><p>Check servo channel assignment</p></li>
+</ul>
+<p><strong>Jerky motion:</strong></p>
+<ul class="simple">
+<li><p>Reduce speed: <code class="docutils literal notranslate"><span class="pre">arm.set_speed(30)</span></code></p></li>
+<li><p>Check for mechanical binding</p></li>
+<li><p>Lubricate bearings if needed</p></li>
+</ul>
+<p><strong>Overheating servos:</strong></p>
+<ul class="simple">
+<li><p>Don’t leave servos under continuous load</p></li>
+<li><p>Check for over-tightened screws</p></li>
+<li><p>Consider upgrading to higher-torque servos</p></li>
+</ul>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="wiring.html"><span class="doc">Wiring Guide</span></a> - Detailed wiring guide</p></li>
+<li><p><a class="reference internal" href="../getting_started/quickstart.html"><span class="doc">Quickstart Guide</span></a> - Start programming</p></li>
+<li><p><a class="reference internal" href="../tutorials/basic_control.html"><span class="doc">Basic Control</span></a> - Control tutorials</p></li>
+</ul>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="wiring.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Wiring Guide</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="3d_printing.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">3D Printing Guide</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2025, Jonathan Shulgach
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Assembly Guide</a><ul>
+<li><a class="reference internal" href="#before-you-start">Before You Start</a></li>
+<li><a class="reference internal" href="#step-1-base-assembly">Step 1: Base Assembly</a></li>
+<li><a class="reference internal" href="#step-2-shoulder-joint">Step 2: Shoulder Joint</a></li>
+<li><a class="reference internal" href="#step-3-upper-arm">Step 3: Upper Arm</a></li>
+<li><a class="reference internal" href="#step-4-forearm">Step 4: Forearm</a></li>
+<li><a class="reference internal" href="#step-5-wrist-gripper">Step 5: Wrist &amp; Gripper</a></li>
+<li><a class="reference internal" href="#step-6-electronics">Step 6: Electronics</a></li>
+<li><a class="reference internal" href="#wiring-diagram">Wiring Diagram</a></li>
+<li><a class="reference internal" href="#step-7-cable-management">Step 7: Cable Management</a></li>
+<li><a class="reference internal" href="#step-8-firmware-installation">Step 8: Firmware Installation</a></li>
+<li><a class="reference internal" href="#step-9-calibration">Step 9: Calibration</a></li>
+<li><a class="reference internal" href="#step-10-final-test">Step 10: Final Test</a></li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=46bd48cc"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    </body>
+</html>

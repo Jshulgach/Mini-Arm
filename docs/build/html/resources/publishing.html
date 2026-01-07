@@ -3,11 +3,11 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="MoveIt2 Integration" href="moveit.html"><link rel="prev" title="ROS2 Setup" href="setup.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="next" title="Changelog" href="changelog.html"><link rel="prev" title="Contributing" href="contributing.html">
         <link rel="prefetch" href="../_static/mini-arm-logo.png" as="image">
 
     <link rel="shortcut icon" href="../_static/favicon.ico"><!-- Generated with Sphinx 8.2.3 and Furo 2025.12.19 -->
-        <title>RViz Visualization - Mini-Arm 0.3.0 documentation</title>
+        <title>Publishing to PyPI - Mini-Arm 0.3.0 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d111a655" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=7bdb33bb" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -232,18 +232,18 @@
 </li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">ROS2 Integration</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="setup.html">ROS2 Setup</a></li>
-<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">RViz Visualization</a></li>
-<li class="toctree-l1"><a class="reference internal" href="moveit.html">MoveIt2 Integration</a></li>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../ros2/setup.html">ROS2 Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ros2/visualization.html">RViz Visualization</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ros2/moveit.html">MoveIt2 Integration</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Resources</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../resources/faqs.html">Frequently Asked Questions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../resources/troubleshooting.html">Troubleshooting</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../resources/contributing.html">Contributing</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../resources/publishing.html">Publishing to PyPI</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../resources/changelog.html">Changelog</a></li>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="faqs.html">Frequently Asked Questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="troubleshooting.html">Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Publishing to PyPI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 
 </div>
@@ -264,7 +264,7 @@
         </a>
         <div class="content-icon-container">
           <div class="view-this-page">
-  <a class="muted-link" href="../_sources/ros2/visualization.rst.txt" title="View this page">
+  <a class="muted-link" href="../_sources/resources/publishing.rst.txt" title="View this page">
     <svg><use href="#svg-eye"></use></svg>
     <span class="visually-hidden">View this page</span>
   </a>
@@ -282,98 +282,136 @@
           </label>
         </div>
         <article role="main" id="furo-main-content">
-          <section id="rviz-visualization">
-<h1>RViz Visualization<a class="headerlink" href="#rviz-visualization" title="Link to this heading">¶</a></h1>
-<p>Visualize your Mini-Arm in RViz2.</p>
-<section id="basic-visualization">
-<h2>Basic Visualization<a class="headerlink" href="#basic-visualization" title="Link to this heading">¶</a></h2>
-<p>Launch the robot description viewer:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>miniarm_bringup<span class="w"> </span>view_robot.launch.py
-</pre></div>
-</div>
-<p>This opens RViz with:</p>
-<ul class="simple">
-<li><p>Robot model from URDF</p></li>
-<li><p>Joint state publisher GUI</p></li>
-<li><p>TF frames</p></li>
-</ul>
-</section>
-<section id="interactive-control">
-<h2>Interactive Control<a class="headerlink" href="#interactive-control" title="Link to this heading">¶</a></h2>
-<p>Use the joint state publisher GUI to move joints interactively:</p>
-<a class="reference internal image-reference" href="_static/ros2/rviz_interactive.png"><img alt="_static/ros2/rviz_interactive.png" class="align-center" src="_static/ros2/rviz_interactive.png" style="width: 600px;" />
-</a>
-</section>
-<section id="real-robot-visualization">
-<h2>Real Robot Visualization<a class="headerlink" href="#real-robot-visualization" title="Link to this heading">¶</a></h2>
-<p>Connect to the physical robot and visualize its state:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>miniarm_bringup<span class="w"> </span>robot.launch.py<span class="w"> </span>rviz:<span class="o">=</span><span class="nb">true</span>
-</pre></div>
-</div>
-<p>The robot model will follow the real joint positions.</p>
-</section>
-<section id="custom-rviz-configuration">
-<h2>Custom RViz Configuration<a class="headerlink" href="#custom-rviz-configuration" title="Link to this heading">¶</a></h2>
-<p>Create a custom RViz config:</p>
+          <section id="publishing-to-pypi">
+<h1>Publishing to PyPI<a class="headerlink" href="#publishing-to-pypi" title="Link to this heading">¶</a></h1>
+<p>This guide explains how to publish the <code class="docutils literal notranslate"><span class="pre">mini-arm</span></code> package to PyPI.</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading">¶</a></h2>
 <ol class="arabic simple">
-<li><p>Launch RViz:</p></li>
+<li><p>Create accounts on <a class="reference external" href="https://pypi.org">PyPI</a> and <a class="reference external" href="https://test.pypi.org">TestPyPI</a></p></li>
+<li><p>Install build tools:</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>rviz2
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>build<span class="w"> </span>twine
 </pre></div>
 </div>
-<ol class="arabic" start="2">
-<li><p>Add displays:</p>
+</section>
+<section id="build-the-package">
+<h2>Build the Package<a class="headerlink" href="#build-the-package" title="Link to this heading">¶</a></h2>
+<p>From the repository root:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Clean previous builds</span>
+rm<span class="w"> </span>-rf<span class="w"> </span>dist/<span class="w"> </span>build/<span class="w"> </span>src/*.egg-info
+
+<span class="c1"># Build source and wheel distributions</span>
+python<span class="w"> </span>-m<span class="w"> </span>build
+</pre></div>
+</div>
+<p>This creates:</p>
 <ul class="simple">
-<li><p><strong>RobotModel</strong>: Topic = <code class="docutils literal notranslate"><span class="pre">/robot_description</span></code></p></li>
-<li><p><strong>TF</strong>: Show all transforms</p></li>
-<li><p><strong>Marker</strong>: Topic = <code class="docutils literal notranslate"><span class="pre">/miniarm/workspace</span></code> (optional)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dist/mini_arm-X.Y.Z.tar.gz</span></code> (source distribution)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dist/mini_arm-X.Y.Z-py3-none-any.whl</span></code> (wheel)</p></li>
 </ul>
-</li>
-<li><p>Save configuration:</p>
-<p>File → Save Config As → <code class="docutils literal notranslate"><span class="pre">my_miniarm.rviz</span></code></p>
-</li>
-<li><p>Launch with custom config:</p></li>
+</section>
+<section id="test-on-testpypi">
+<h2>Test on TestPyPI<a class="headerlink" href="#test-on-testpypi" title="Link to this heading">¶</a></h2>
+<p>Always test on TestPyPI first:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Upload to TestPyPI</span>
+python<span class="w"> </span>-m<span class="w"> </span>twine<span class="w"> </span>upload<span class="w"> </span>--repository<span class="w"> </span>testpypi<span class="w"> </span>dist/*
+
+<span class="c1"># Test installation</span>
+pip<span class="w"> </span>install<span class="w"> </span>--index-url<span class="w"> </span>https://test.pypi.org/simple/<span class="w"> </span>mini-arm
+</pre></div>
+</div>
+</section>
+<section id="publish-to-pypi">
+<h2>Publish to PyPI<a class="headerlink" href="#publish-to-pypi" title="Link to this heading">¶</a></h2>
+<p>Once verified on TestPyPI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Upload to PyPI</span>
+python<span class="w"> </span>-m<span class="w"> </span>twine<span class="w"> </span>upload<span class="w"> </span>dist/*
+
+<span class="c1"># Verify installation</span>
+pip<span class="w"> </span>install<span class="w"> </span>mini-arm
+</pre></div>
+</div>
+</section>
+<section id="using-api-tokens-recommended">
+<h2>Using API Tokens (Recommended)<a class="headerlink" href="#using-api-tokens-recommended" title="Link to this heading">¶</a></h2>
+<p>Instead of username/password, use API tokens:</p>
+<ol class="arabic simple">
+<li><p>Go to PyPI → Account Settings → API tokens</p></li>
+<li><p>Create a token scoped to the <code class="docutils literal notranslate"><span class="pre">mini-arm</span></code> project</p></li>
+<li><p>Create <code class="docutils literal notranslate"><span class="pre">~/.pypirc</span></code>:</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>launch<span class="w"> </span>miniarm_bringup<span class="w"> </span>view_robot.launch.py<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>rviz_config:<span class="o">=</span>/path/to/my_miniarm.rviz
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[pypi]</span>
+<span class="na">username</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">__token__</span>
+<span class="na">password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pypi-YOUR-TOKEN-HERE</span>
+
+<span class="k">[testpypi]</span>
+<span class="na">username</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">__token__</span>
+<span class="na">password</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pypi-YOUR-TESTPYPI-TOKEN-HERE</span>
 </pre></div>
 </div>
 </section>
-<section id="workspace-visualization">
-<h2>Workspace Visualization<a class="headerlink" href="#workspace-visualization" title="Link to this heading">¶</a></h2>
-<p>Visualize the reachable workspace:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Publish workspace boundary markers</span>
-<span class="n">ros2</span> <span class="n">run</span> <span class="n">miniarm_bringup</span> <span class="n">workspace_visualizer</span>
+<section id="automated-publishing-with-github-actions">
+<h2>Automated Publishing with GitHub Actions<a class="headerlink" href="#automated-publishing-with-github-actions" title="Link to this heading">¶</a></h2>
+<p>Add this workflow to <code class="docutils literal notranslate"><span class="pre">.github/workflows/publish.yml</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Publish to PyPI</span>
+
+<span class="nt">on</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">release</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">types</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">published</span><span class="p p-Indicator">]</span>
+
+<span class="nt">jobs</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">publish</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">runs-on</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu-latest</span>
+<span class="w">    </span><span class="nt">steps</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Set up Python</span>
+<span class="w">        </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/setup-python@v5</span>
+<span class="w">        </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">python-version</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;3.11&#39;</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Install build tools</span>
+<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pip install build twine</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Build package</span>
+<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python -m build</span>
+
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Publish to PyPI</span>
+<span class="w">        </span><span class="nt">env</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">TWINE_USERNAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">__token__</span>
+<span class="w">          </span><span class="nt">TWINE_PASSWORD</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.PYPI_API_TOKEN }}</span>
+<span class="w">        </span><span class="nt">run</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">python -m twine upload dist/*</span>
 </pre></div>
 </div>
+<p>Then add <code class="docutils literal notranslate"><span class="pre">PYPI_API_TOKEN</span></code> to your repository secrets.</p>
 </section>
-<section id="tf-frames">
-<h2>TF Frames<a class="headerlink" href="#tf-frames" title="Link to this heading">¶</a></h2>
-<p>The Mini-Arm publishes these TF frames:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>base_link
-└── link_1 (base rotation)
-    └── link_2 (shoulder)
-        └── link_3 (upper arm)
-            └── link_4 (forearm)
-                └── link_5 (wrist 1)
-                    └── link_6 (wrist 2)
-                        └── tool0 (end effector)
-                            └── gripper_base
-                                ├── finger_left
-                                └── finger_right
-</pre></div>
-</div>
-<p>View frames:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ros2<span class="w"> </span>run<span class="w"> </span>tf2_tools<span class="w"> </span>view_frames
-</pre></div>
-</div>
+<section id="version-checklist">
+<h2>Version Checklist<a class="headerlink" href="#version-checklist" title="Link to this heading">¶</a></h2>
+<p>Before publishing a new version:</p>
+<ol class="arabic simple">
+<li><p>☐ Update <code class="docutils literal notranslate"><span class="pre">src/mini_arm/version.py</span></code></p></li>
+<li><p>☐ Update <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> version</p></li>
+<li><p>☐ Update ROS2 <code class="docutils literal notranslate"><span class="pre">package.xml</span></code> versions</p></li>
+<li><p>☐ Update <code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code></p></li>
+<li><p>☐ Run tests: <code class="docutils literal notranslate"><span class="pre">pytest</span> <span class="pre">tests/</span> <span class="pre">-v</span></code></p></li>
+<li><p>☐ Build docs: <code class="docutils literal notranslate"><span class="pre">cd</span> <span class="pre">docs</span> <span class="pre">&amp;&amp;</span> <span class="pre">make</span> <span class="pre">html</span></code></p></li>
+<li><p>☐ Commit and tag: <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">tag</span> <span class="pre">-a</span> <span class="pre">vX.Y.Z</span></code></p></li>
+<li><p>☐ Push: <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">push</span> <span class="pre">origin</span> <span class="pre">main</span> <span class="pre">--tags</span></code></p></li>
+<li><p>☐ Create GitHub release</p></li>
+<li><p>☐ Publish to PyPI</p></li>
+</ol>
 </section>
-<section id="next-steps">
-<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading">¶</a></h2>
-<ul class="simple">
-<li><p><a class="reference internal" href="moveit.html"><span class="doc">MoveIt2 Integration</span></a> - Motion planning</p></li>
-<li><p><a class="reference internal" href="setup.html"><span class="doc">ROS2 Setup</span></a> - Full ROS2 setup</p></li>
-</ul>
+<section id="verifying-installation">
+<h2>Verifying Installation<a class="headerlink" href="#verifying-installation" title="Link to this heading">¶</a></h2>
+<p>After publishing, verify the package works:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">mini_arm</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">mini_arm</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">mini_arm</span><span class="w"> </span><span class="kn">import</span> <span class="n">MiniArmClient</span>
+<span class="c1"># Test basic functionality</span>
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -382,23 +420,23 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="moveit.html">
+          <a class="next-page" href="changelog.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">MoveIt2 Integration</div>
+                <div class="title">Changelog</div>
               </div>
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
             </a>
-          <a class="prev-page" href="setup.html">
+          <a class="prev-page" href="contributing.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">ROS2 Setup</div>
+                <div class="title">Contributing</div>
                 
               </div>
             </a>
@@ -432,14 +470,15 @@
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">RViz Visualization</a><ul>
-<li><a class="reference internal" href="#basic-visualization">Basic Visualization</a></li>
-<li><a class="reference internal" href="#interactive-control">Interactive Control</a></li>
-<li><a class="reference internal" href="#real-robot-visualization">Real Robot Visualization</a></li>
-<li><a class="reference internal" href="#custom-rviz-configuration">Custom RViz Configuration</a></li>
-<li><a class="reference internal" href="#workspace-visualization">Workspace Visualization</a></li>
-<li><a class="reference internal" href="#tf-frames">TF Frames</a></li>
-<li><a class="reference internal" href="#next-steps">Next Steps</a></li>
+<li><a class="reference internal" href="#">Publishing to PyPI</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#build-the-package">Build the Package</a></li>
+<li><a class="reference internal" href="#test-on-testpypi">Test on TestPyPI</a></li>
+<li><a class="reference internal" href="#publish-to-pypi">Publish to PyPI</a></li>
+<li><a class="reference internal" href="#using-api-tokens-recommended">Using API Tokens (Recommended)</a></li>
+<li><a class="reference internal" href="#automated-publishing-with-github-actions">Automated Publishing with GitHub Actions</a></li>
+<li><a class="reference internal" href="#version-checklist">Version Checklist</a></li>
+<li><a class="reference internal" href="#verifying-installation">Verifying Installation</a></li>
 </ul>
 </li>
 </ul>

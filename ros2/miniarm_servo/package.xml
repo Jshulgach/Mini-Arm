@@ -16,6 +16,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>moveit_common</build_depend>
 
+  <depend>miniarm_core</depend>
   <depend>miniarm_description</depend>
   <depend>miniarm_moveit_config</depend>
   <depend>control_msgs</depend>

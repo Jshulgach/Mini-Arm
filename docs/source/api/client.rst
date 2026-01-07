@@ -1,12 +1,12 @@
 MiniArmClient API
 =================
 
-.. module:: mini_arm
+.. module:: miniarm_core
    :synopsis: Mini-Arm robot control interface
 
 The ``MiniArmClient`` class provides a complete interface for controlling the Mini-Arm robot via serial communication.
 
-.. autoclass:: mini_arm.MiniArmClient
+.. autoclass:: miniarm_core.MiniArmClient
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ Quick Reference
 
 .. code-block:: python
 
-    from mini_arm import MiniArmClient
+    from miniarm_core import MiniArmClient
 
     # Connect to Mini-Arm
     client = MiniArmClient(port='COM3', baudrate=115200)

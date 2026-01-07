@@ -5,9 +5,9 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../src'))  # Ensure mini_arm is discoverable
+sys.path.insert(0, os.path.abspath('../../ros2/miniarm_core'))  # Ensure miniarm_core is discoverable
 
-from mini_arm.version import __version__
+from miniarm_core.version import __version__
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information

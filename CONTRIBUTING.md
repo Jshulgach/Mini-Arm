@@ -8,7 +8,7 @@ Mini-Arm is organized as a monorepo with multiple distributable components:
 
 ```
 Mini-Arm/
-├── src/mini_arm/          # Python pip package (PyPI)
+├── ros2/miniarm_core/          # Python pip package (PyPI)
 ├── ros2/                  # ROS2 packages (colcon build)
 │   ├── miniarm_description/    # URDF, meshes
 │   ├── miniarm_moveit_config/  # MoveIt2 configuration
@@ -93,11 +93,11 @@ source install/setup.bash
 
 ## Version Management
 
-**Single source of truth:** `src/mini_arm/version.py`
+**Single source of truth:** `ros2/miniarm_core/version.py`
 
 When releasing a new version:
 
-1. Update `src/mini_arm/version.py`
+1. Update `ros2/miniarm_core/version.py`
 2. Update `pyproject.toml` version
 3. Update ROS2 `package.xml` versions (all three)
 4. Commit: `git commit -am "Bump version to X.Y.Z"`

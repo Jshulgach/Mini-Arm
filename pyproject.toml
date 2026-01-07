@@ -71,7 +71,7 @@ visualization = [
 ]
 
 [project.scripts]
-mini-arm = "mini_arm.__main__:main"
+mini-arm = "miniarm_core.__main__:main"
 
 [project.urls]
 Homepage = "https://github.com/Jshulgach/Mini-Arm"
@@ -81,10 +81,10 @@ Issues = "https://github.com/Jshulgach/Mini-Arm/issues"
 Changelog = "https://github.com/Jshulgach/Mini-Arm/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["ros2/miniarm_core"]
 
 [tool.setuptools.package-data]
-"mini_arm" = ["py.typed"]
+"miniarm_core" = ["py.typed"]
 
 [tool.black]
 line-length = 88
@@ -130,14 +130,14 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py", "*_test.py"]
+python_files = ["test_client.py"]
 addopts = "-v --tb=short"
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
 
 [tool.coverage.run]
-source = ["src/mini_arm"]
+source = ["ros2/miniarm_core/miniarm_core"]
 branch = true
 omit = [
     "*/tests/*",

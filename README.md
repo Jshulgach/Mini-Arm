@@ -47,10 +47,14 @@ This repository contains everything needed to build, program, and control the Mi
 
 ```
 Mini-Arm/
-├── src/mini_arm/          # Python package (pip installable)
-│   ├── __init__.py
-│   ├── client.py          # MiniArmClient class
-│   └── __main__.py        # CLI entry point
+├── ros2/                  # ROS2 packages (also contains Python client)
+│   ├── miniarm_core/          # Python client library (pip installable)
+│   │   └── miniarm_core/
+│   │       ├── client.py      # MiniArmClient class
+│   │       └── __main__.py    # CLI entry point
+│   ├── miniarm_description/   # URDF & meshes
+│   ├── miniarm_moveit_config/ # MoveIt2 configuration
+│   └── miniarm_servo/         # Real-time servo control
 ├── firmware/              # Embedded firmware
 │   └── circuitpython/     # CircuitPython for Raspberry Pi Pico
 │       ├── code.py        # Main firmware
@@ -60,23 +64,14 @@ Mini-Arm/
 │   ├── cad/solidworks/    # SolidWorks CAD files (.SLDPRT, .SLDASM)
 │   ├── stl/               # 3D printable STL files
 │   └── bom/               # Bill of Materials
-├── ros2/                  # ROS2 packages
-│   ├── miniarm_description/   # URDF & meshes
-│   ├── miniarm_moveit_config/ # MoveIt configuration
-│   └── miniarm_servo/         # Real-time servo control
 ├── examples/              # Usage examples and demos
-│   ├── 01_basic_control/  # Simple control scripts
-│   ├── 02_trajectory/     # Trajectory execution
-│   ├── 02_xbox_teleop/    # Xbox controller teleop
-│   └── 03_analysis/       # Motion analysis tools
 ├── tests/                 # Test scripts
 ├── docs/                  # Documentation (Sphinx)
-├── pyproject.toml         # Python package configuration
-└── requirements.txt       # Python dependencies
+└── pyproject.toml         # Python package configuration
 ```
 
 **Key components:**
-- `src/mini_arm/` - Pip-installable Python package for controlling the robot
+- `ros2/miniarm_core/` - Pip-installable Python package for controlling the robot
 - `firmware/circuitpython/` - CircuitPython firmware for the Raspberry Pi Pico
 - `hardware/` - CAD files, STL meshes, and bill of materials
 - `ros2/` - ROS2 packages for visualization and advanced control
@@ -95,6 +90,25 @@ pip install git+https://github.com/Jshulgach/Mini-Arm.git
 git clone https://github.com/Jshulgach/Mini-Arm.git
 cd Mini-Arm
 pip install -e .
+```
+
+### ROS2 Installation (All Packages)
+
+For ROS2 users, all packages can be built together:
+
+```bash
+# Create workspace
+mkdir -p ~/miniarm_ws/src
+cd ~/miniarm_ws/src
+
+# Clone and symlink
+git clone https://github.com/Jshulgach/Mini-Arm.git
+ln -s Mini-Arm/ros2/* .
+
+# Build
+cd ~/miniarm_ws
+colcon build
+source install/setup.bash
 ```
 
 ### Firmware Setup
@@ -149,10 +163,10 @@ mini-arm --port COM3 --interactive
 Use the `MiniArmClient` class in your own scripts:
 
 ```python
-from mini_arm import MiniArmClient
+from miniarm_core import MiniArmClient
 
 # Connect to Mini-Arm
-client = MiniArmClient(port='COM3', baudrate=9600, verbose=True)
+client = MiniArmClient(port='COM3', baudrate=115200, verbose=True)
 
 # Send commands
 client.send('help')        # List available commands
@@ -163,8 +177,9 @@ client.set_pose(0.135, 0.0, 0.22)  # Move to position
 # Context manager support
 with MiniArmClient(port='COM3') as client:
     client.home()
-    pose = client.get_current_pose()
+    pose = client.get_pose()
     print(f"Current pose: {pose}")
+```
 ```
 
 ### Available Commands

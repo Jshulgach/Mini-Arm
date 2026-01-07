@@ -13,6 +13,8 @@ Prerequisites
 Installation
 ------------
 
+The Mini-Arm ROS2 packages include the Python client library, so everything builds together with ``colcon``.
+
 1. Create a ROS2 workspace:
 
 .. code-block:: bash
@@ -20,37 +22,83 @@ Installation
     mkdir -p ~/miniarm_ws/src
     cd ~/miniarm_ws/src
 
-2. Clone the Mini-Arm ROS2 package:
+2. Clone the Mini-Arm repository and symlink packages:
 
 .. code-block:: bash
 
     git clone https://github.com/Jshulgach/Mini-Arm.git
-    cd Mini-Arm/miniarm_ros
+    ln -s Mini-Arm/ros2/* .
 
-3. Install dependencies:
+3. Install ROS dependencies:
 
 .. code-block:: bash
 
     cd ~/miniarm_ws
     rosdep install --from-paths src --ignore-src -r -y
 
-4. Build:
+4. Build all packages:
 
 .. code-block:: bash
 
     colcon build --symlink-install
     source install/setup.bash
 
+This builds **all** Mini-Arm packages:
+
+- ``miniarm_core`` - Python client library (MiniArmClient)
+- ``miniarm_description`` - URDF and meshes
+- ``miniarm_moveit_config`` - MoveIt2 configuration
+- ``miniarm_servo`` - Real-time servo control
+
+Alternative: vcstool
+--------------------
+
+For teams or CI/CD, create a ``miniarm.repos`` file:
+
+.. code-block:: yaml
+
+    repositories:
+      Mini-Arm:
+        type: git
+        url: https://github.com/Jshulgach/Mini-Arm.git
+        version: v0.4.0
+
+Then:
+
+.. code-block:: bash
+
+    cd ~/miniarm_ws/src
+    vcs import < miniarm.repos
+    ln -s Mini-Arm/ros2/* .
+    cd ~/miniarm_ws
+    colcon build
+
 Package Structure
 -----------------
 
 .. code-block:: text
 
-    miniarm_ros/
+    ros2/
+    ├── miniarm_core/            # Python client (ament_python)
+    │   └── miniarm_core/
+    │       ├── client.py        # MiniArmClient class
+    │       └── __main__.py      # CLI
     ├── miniarm_description/     # URDF, meshes
-    ├── miniarm_bringup/         # Launch files
     ├── miniarm_moveit_config/   # MoveIt2 configuration
-    └── miniarm_control/         # ros2_control interface
+    └── miniarm_servo/           # Real-time control
+
+Using miniarm_core in ROS2 Nodes
+--------------------------------
+
+After building, you can import the client in your ROS2 Python nodes:
+
+.. code-block:: python
+
+    from miniarm_core import MiniArmClient
+    
+    client = MiniArmClient(port='/dev/ttyACM0')
+    client.home()
+    client.set_pose(0.135, 0.0, 0.22)
 
 Launching
 ---------
@@ -59,19 +107,7 @@ Launching
 
 .. code-block:: bash
 
-    ros2 launch miniarm_bringup view_robot.launch.py
-
-**Connect to real robot:**
-
-.. code-block:: bash
-
-    ros2 launch miniarm_bringup robot.launch.py
-
-**Launch with MoveIt2:**
-
-.. code-block:: bash
-
-    ros2 launch miniarm_moveit_config demo.launch.py
+    ros2 launch miniarm_servo show_robot.launch.py
 
 Topics
 ------

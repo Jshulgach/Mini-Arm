@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>miniarm_core</name>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
   <description>Python client library for controlling the Mini-Arm 6-DOF robot</description>
 
   <author email="jshulgac@andrew.cmu.edu">Jonathan Shulgach</author>

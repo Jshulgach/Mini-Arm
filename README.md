@@ -11,7 +11,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![PyPI](https://img.shields.io/pypi/v/mini-arm.svg)](https://pypi.org/project/mini-arm/)
-[![Downloads](https://img.shields.io/pypi/dm/mini-arm.svg)](https://pypi.org/project/mini-arm/)
+[![Downloads](https://static.pepy.tech/badge/mini-arm)](https://pepy.tech/project/mini-arm)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://jshulgach.github.io/Mini-Arm/)
 
 **[📖 Documentation](https://jshulgach.github.io/Mini-Arm/)** | **[🚀 Quick Start](https://jshulgach.github.io/Mini-Arm/getting_started/quickstart.html)** | **[🔧 Hardware Guide](https://jshulgach.github.io/Mini-Arm/hardware/assembly.html)**

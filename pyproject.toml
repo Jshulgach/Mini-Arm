@@ -78,6 +78,7 @@ Documentation = "https://jshulgach.github.io/Mini-Arm/"
 Repository = "https://github.com/Jshulgach/Mini-Arm"
 Issues = "https://github.com/Jshulgach/Mini-Arm/issues"
 Changelog = "https://github.com/Jshulgach/Mini-Arm/blob/main/CHANGELOG.md"
+PyPI = "https://pypi.org/project/mini-arm/"
 
 [tool.setuptools.packages.find]
 where = ["ros2/miniarm_core"]

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: mini-arm
-Version: 0.4.0.dev1
+Version: 0.4.0
 Summary: A Python library for controlling the Mini-Arm 6-DOF robotic arm
 Author-email: Jonathan Shulgach <jshulgac@andrew.cmu.edu>
 Maintainer-email: Jonathan Shulgach <jshulgac@andrew.cmu.edu>
@@ -22,7 +22,7 @@ Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
-Classifier: Topic :: Scientific/Engineering :: Robotics
+Classifier: Topic :: Scientific/Engineering
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown

@@ -10,6 +10,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![PyPI](https://img.shields.io/pypi/v/mini-arm.svg)](https://pypi.org/project/mini-arm/)
 [![GitHub Repo stars](https://img.shields.io/github/stars/JShulgach/Mini-Arm)](https://github.com/Jshulgach/Mini-Arm/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/JShulgach/Mini-Arm)](https://github.com/Jshulgach/Mini-Arm/network/members)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://jshulgach.github.io/Mini-Arm/)

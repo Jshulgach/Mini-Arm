@@ -30,18 +30,17 @@ jobs:
 
       - name: Run linting
         run: |
-          ruff check src/
-          black --check src/
+          ruff check ros2/miniarm_core/miniarm_core/
+          black --check ros2/miniarm_core/miniarm_core/
 
       - name: Run type checking
         run: |
-          mypy src/mini_arm --ignore-missing-imports
+          mypy ros2/miniarm_core/miniarm_core --ignore-missing-imports
         continue-on-error: true
 
       - name: Run tests
         run: |
           pytest tests/ -v --tb=short
-        continue-on-error: true  # Tests may require hardware
 
   build:
     runs-on: ubuntu-latest

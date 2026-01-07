@@ -101,6 +101,7 @@ Key Features
    resources/faqs
    resources/troubleshooting
    resources/contributing
+   resources/publishing
    resources/changelog
 
 Indices and tables

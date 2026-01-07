@@ -1,15 +1,21 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>miniarm_description</name>
-  <version>2.0.3</version>
-  <description>Resources used for MoveIt testing</description>
+  <version>0.3.0</version>
+  <description>URDF and mesh files for the Mini-Arm 6-DOF robot</description>
 
   <author email="jshulgac@andrew.cmu.edu">Jonathan Shulgach</author>
   <maintainer email="jshulgac@andrew.cmu.edu">Jonathan Shulgach</maintainer>
 
-  <license>BSD</license>
+  <license>MIT</license>
+
+  <url type="website">https://github.com/Jshulgach/Mini-Arm</url>
+  <url type="repository">https://github.com/Jshulgach/Mini-Arm</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Python pip package for robot control -->
+  <!-- Install with: pip install mini-arm -->
 
   <export>
       <build_type>ament_cmake</build_type>

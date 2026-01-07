@@ -1,22 +1,23 @@
 <?xml version="1.0"?>
-<package format="2">
+<package format="3">
   <name>miniarm_servo</name>
-  <version>1.0.0</version>
+  <version>0.3.0</version>
 
-  <description>Provides real-time manipulator Cartesian and joint servoing for AJ Mini-arm.</description>
+  <description>Real-time Cartesian and joint servoing for the Mini-Arm robot with MoveIt2</description>
 
+  <author email="jshulgac@andrew.cmu.edu">Jonathan Shulgach</author>
   <maintainer email="jshulgac@andrew.cmu.edu">Jonathan Shulgach</maintainer>
 
-  <license>BSD 3-Clause</license>
+  <license>MIT</license>
 
-  <url type="website">https://ros-planning.github.io/moveit_tutorials</url>
-
-  <author>Jonathan Shulgach</author>
-  <author email="jshulgac@andrew.cmu.edu">Jonathan Shulgach</author>
+  <url type="website">https://github.com/Jshulgach/Mini-Arm</url>
+  <url type="repository">https://github.com/Jshulgach/Mini-Arm</url>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_depend>moveit_common</build_depend>
 
+  <depend>miniarm_description</depend>
+  <depend>miniarm_moveit_config</depend>
   <depend>control_msgs</depend>
   <depend>control_toolbox</depend>
   <depend>geometry_msgs</depend>
@@ -26,7 +27,6 @@
   <depend>std_msgs</depend>
   <depend>std_srvs</depend>
   <depend>tf2_eigen</depend>
-  <!-- <depend>trajectory_msgs</depend> -->
 
   <!-- <exec_depend>gripper_controllers</exec_depend> -->
   <exec_depend>joint_state_broadcaster</exec_depend>

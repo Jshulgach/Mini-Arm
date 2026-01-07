@@ -5,11 +5,12 @@ Serial communication interface for the Mini-Arm robot.
 """
 
 import time
-import serial
-import numpy as np
-from typing import Optional, Union, List, Tuple
+from typing import List, Optional, Tuple, Union
 
-__all__ = ['MiniArmClient']
+import numpy as np
+import serial
+
+__all__ = ["MiniArmClient"]
 
 
 class MiniArmClient:
@@ -52,9 +53,9 @@ class MiniArmClient:
     >>> pose = client.get_pose()
     >>> print(f"Current position: {pose}")
     >>> client.disconnect()
-    
+
     Using context manager:
-    
+
     >>> with MiniArmClient(port='COM3') as client:
     ...     client.home()
     ...     client.set_pose(0.135, 0.0, 0.22)
@@ -62,22 +63,22 @@ class MiniArmClient:
 
     # Default home position
     HOME_POSITION = [0.135, 0.0, 0.215]
-    
+
     # Workspace limits (meters)
     WORKSPACE_LIMITS = {
-        'x': (0.05, 0.25),
-        'y': (-0.15, 0.15),
-        'z': (0.10, 0.30),
+        "x": (0.05, 0.25),
+        "y": (-0.15, 0.15),
+        "z": (0.10, 0.30),
     }
 
     def __init__(
         self,
-        name: str = 'MiniArmClient',
-        port: str = 'COM3',
+        name: str = "MiniArmClient",
+        port: str = "COM3",
         baudrate: int = 115200,
-        command_delimiter: str = ';',
+        command_delimiter: str = ";",
         timeout: float = 1.0,
-        verbose: bool = False
+        verbose: bool = False,
     ):
         self.name = name
         self.port = port
@@ -85,7 +86,7 @@ class MiniArmClient:
         self.command_delimiter = command_delimiter
         self.timeout = timeout
         self.verbose = verbose
-        
+
         # Internal state
         self.s: Optional[serial.Serial] = None
         self.connected: bool = False
@@ -99,18 +100,16 @@ class MiniArmClient:
         """Establish serial connection to Mini-Arm."""
         try:
             self.s = serial.Serial(
-                port=self.port,
-                baudrate=self.baudrate,
-                timeout=self.timeout
+                port=self.port, baudrate=self.baudrate, timeout=self.timeout
             )
             self.connected = self.s.is_open
-            
+
             if self.connected:
                 # Clear any startup messages
                 time.sleep(0.5)
                 self.get_buffer()
                 self.logger(f"Connected to {self.port} at {self.baudrate} baud")
-            
+
         except serial.SerialException as e:
             self.s = None
             self.connected = False
@@ -118,7 +117,7 @@ class MiniArmClient:
 
     def logger(self, *argv, warning: bool = False):
         """Log messages with timestamp.
-        
+
         Parameters
         ----------
         *argv : str
@@ -126,9 +125,9 @@ class MiniArmClient:
         warning : bool, optional
             If True, prefix message with '(Warning)'. Default is False.
         """
-        msg = ''.join(str(a) for a in argv)
+        msg = "".join(str(a) for a in argv)
         if warning:
-            msg = '⚠️  ' + msg
+            msg = "⚠️  " + msg
         print(f"[{time.monotonic():.3f}][{self.name}] {msg}")
 
     # =========================================================================
@@ -137,7 +136,7 @@ class MiniArmClient:
 
     def send_message(self, message: str) -> None:
         """Send a message to the Pico over serial.
-        
+
         Automatically adds the command terminator if not present.
 
         Parameters
@@ -148,7 +147,7 @@ class MiniArmClient:
         if not self.s or not self.s.is_open:
             self.logger("Serial connection not available", warning=True)
             return
-            
+
         if not message.endswith(self.command_delimiter):
             message += self.command_delimiter
 
@@ -162,12 +161,12 @@ class MiniArmClient:
 
     def send(self, command: str) -> Optional[str]:
         """Send a command and optionally read the response.
-        
+
         Parameters
         ----------
         command : str
             Command string to send to Mini-Arm.
-            
+
         Returns
         -------
         str or None
@@ -187,12 +186,12 @@ class MiniArmClient:
         """
         if not self.s or not self.s.is_open:
             return None
-            
+
         try:
             if self.s.in_waiting > 0:
                 msg = ""
                 while self.s.in_waiting > 0:
-                    msg += self.s.readline().decode(errors='ignore')
+                    msg += self.s.readline().decode(errors="ignore")
                     time.sleep(0.01)
                 if self.verbose and msg:
                     self.logger(f"RX: {msg.strip()}")
@@ -203,12 +202,12 @@ class MiniArmClient:
 
     def wait_for_response(self, timeout: float = 2.0) -> Optional[str]:
         """Wait for a response from the device.
-        
+
         Parameters
         ----------
         timeout : float
             Maximum time to wait in seconds.
-            
+
         Returns
         -------
         str or None
@@ -243,10 +242,10 @@ class MiniArmClient:
         z: float,
         roll: float = 0.0,
         pitch: float = 0.0,
-        yaw: float = 0.0
+        yaw: float = 0.0,
     ) -> None:
         """Move the end-effector to a Cartesian position.
-        
+
         Parameters
         ----------
         x : float
@@ -267,9 +266,11 @@ class MiniArmClient:
         if self.verbose:
             self.logger(f"Moving to pose: ({x:.3f}, {y:.3f}, {z:.3f})")
 
-    def set_pose_xyz(self, position: Union[List[float], Tuple[float, float, float]]) -> None:
+    def set_pose_xyz(
+        self, position: Union[List[float], Tuple[float, float, float]]
+    ) -> None:
         """Move to XYZ position (convenience method).
-        
+
         Parameters
         ----------
         position : list or tuple
@@ -278,7 +279,9 @@ class MiniArmClient:
         if len(position) >= 3:
             self.set_pose(position[0], position[1], position[2])
         else:
-            self.logger("Position must have at least 3 elements (x, y, z)", warning=True)
+            self.logger(
+                "Position must have at least 3 elements (x, y, z)", warning=True
+            )
 
     def set_delta_pose(
         self,
@@ -287,10 +290,10 @@ class MiniArmClient:
         dz: float = 0.0,
         droll: float = 0.0,
         dpitch: float = 0.0,
-        dyaw: float = 0.0
+        dyaw: float = 0.0,
     ) -> None:
         """Move the end-effector by a relative delta.
-        
+
         Parameters
         ----------
         dx : float
@@ -326,22 +329,22 @@ class MiniArmClient:
         if data:
             try:
                 # Parse response: "cords: [x: 0.135, y: 0.000, z: 0.215]angles: [...]"
-                if 'cords:' in data:
-                    coords_part = data.split('cords:')[1].split('angles:')[0]
-                    coords_part = coords_part.replace('[', '').replace(']', '').strip()
+                if "cords:" in data:
+                    coords_part = data.split("cords:")[1].split("angles:")[0]
+                    coords_part = coords_part.replace("[", "").replace("]", "").strip()
                     pose = []
-                    for p in coords_part.split(','):
-                        if ':' in p:
-                            pose.append(float(p.split(':')[1].strip()))
+                    for p in coords_part.split(","):
+                        if ":" in p:
+                            pose.append(float(p.split(":")[1].strip()))
                     if len(pose) >= 3:
                         self._last_pose = np.array(pose[:3])
                         return self._last_pose
             except Exception as e:
                 if self.verbose:
                     self.logger(f"Error parsing pose: {e}", warning=True)
-        
+
         return self._last_pose
-    
+
     def get_current_pose(self) -> Optional[np.ndarray]:
         """Alias for get_pose() for backward compatibility."""
         return self.get_pose()
@@ -352,7 +355,7 @@ class MiniArmClient:
 
     def set_joint(self, joint_index: int, angle: float) -> None:
         """Move a single joint to a specified angle.
-        
+
         Parameters
         ----------
         joint_index : int
@@ -366,21 +369,21 @@ class MiniArmClient:
 
     def set_joints(self, angles: List[float]) -> None:
         """Set all joint angles.
-        
+
         Parameters
         ----------
         angles : list of float
-            Joint angles in degrees [j0, j1, j2, j3, j4, j5] or 
+            Joint angles in degrees [j0, j1, j2, j3, j4, j5] or
             [j0, j1, j2, j3, j4, j5, gripper].
         """
-        angles_str = ','.join(str(a) for a in angles)
+        angles_str = ",".join(str(a) for a in angles)
         self.send_message(f"movemotors:[{angles_str}]")
         if self.verbose:
             self.logger(f"Setting joints: {angles}")
 
     def get_joints(self) -> Optional[List[float]]:
         """Get current joint angles.
-        
+
         Returns
         -------
         list of float or None
@@ -389,19 +392,19 @@ class MiniArmClient:
         self.send_message("get_joints")
         time.sleep(0.1)
         data = self.get_buffer()
-        
+
         if data:
             try:
                 # Parse joint values from response
-                data = data.replace('[', '').replace(']', '')
-                joints = [float(j.strip()) for j in data.split(',') if j.strip()]
+                data = data.replace("[", "").replace("]", "")
+                joints = [float(j.strip()) for j in data.split(",") if j.strip()]
                 if joints:
                     self._last_joints = joints
                     return joints
             except Exception as e:
                 if self.verbose:
                     self.logger(f"Error parsing joints: {e}", warning=True)
-        
+
         return self._last_joints
 
     # =========================================================================
@@ -410,7 +413,7 @@ class MiniArmClient:
 
     def set_gripper(self, value: Union[float, str]) -> None:
         """Control the gripper.
-        
+
         Parameters
         ----------
         value : float or str
@@ -434,7 +437,7 @@ class MiniArmClient:
 
     def set_led(self, r: int, g: int, b: int) -> None:
         """Set the RGB LED color.
-        
+
         Parameters
         ----------
         r : int
@@ -468,9 +471,11 @@ class MiniArmClient:
     # Trajectory Commands
     # =========================================================================
 
-    def start_trajectory(self, trajectory: str = "circle", repeat: bool = False) -> None:
+    def start_trajectory(
+        self, trajectory: str = "circle", repeat: bool = False
+    ) -> None:
         """Start a predefined trajectory.
-        
+
         Parameters
         ----------
         trajectory : str
@@ -495,7 +500,7 @@ class MiniArmClient:
 
     def get_info(self) -> Optional[str]:
         """Get robot system information.
-        
+
         Returns
         -------
         str or None
@@ -510,7 +515,7 @@ class MiniArmClient:
 
     def get_help(self) -> Optional[str]:
         """Get list of available commands.
-        
+
         Returns
         -------
         str or None
@@ -525,7 +530,7 @@ class MiniArmClient:
 
     def set_debug(self, enabled: bool) -> None:
         """Enable or disable debug mode on the robot.
-        
+
         Parameters
         ----------
         enabled : bool
@@ -541,12 +546,12 @@ class MiniArmClient:
         if isinstance(mode, bool):
             self.set_debug(mode)
         else:
-            enabled = mode.lower() in ('on', 'true', '1')
+            enabled = mode.lower() in ("on", "true", "1")
             self.set_debug(enabled)
 
     def set_rate(self, hz: int) -> None:
         """Set the main loop rate on the robot.
-        
+
         Parameters
         ----------
         hz : int
@@ -562,7 +567,7 @@ class MiniArmClient:
 
     def play_music(self, song: str) -> None:
         """Play a music file on the robot.
-        
+
         Parameters
         ----------
         song : str
@@ -572,7 +577,7 @@ class MiniArmClient:
 
     def read_fsr(self) -> Optional[str]:
         """Read force-sensitive resistor values.
-        
+
         Returns
         -------
         str or None
@@ -588,7 +593,7 @@ class MiniArmClient:
 
     def send_controller_data(self, controller_data: str) -> None:
         """Send Xbox controller data for teleoperation.
-        
+
         Parameters
         ----------
         controller_data : str
@@ -603,18 +608,18 @@ class MiniArmClient:
     def send_ctrl_c(self) -> None:
         """Send Ctrl+C to interrupt current operation."""
         if self.s:
-            self.s.write(b'\x03')
+            self.s.write(b"\x03")
             time.sleep(0.01)
 
     def send_ctrl_d(self) -> None:
         """Send Ctrl+D (soft reset)."""
         if self.s:
-            self.s.write(b'\x04')
+            self.s.write(b"\x04")
             time.sleep(0.01)
 
     def reconnect(self) -> bool:
         """Attempt to reconnect to the robot.
-        
+
         Returns
         -------
         bool
@@ -630,7 +635,7 @@ class MiniArmClient:
         if self.s:
             try:
                 self.s.close()
-            except:
+            except Exception:
                 pass
             self.connected = False
             self.logger("Disconnected")

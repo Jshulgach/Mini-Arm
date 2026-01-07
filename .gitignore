@@ -6,6 +6,11 @@ __pycache__
 # Virtual environments
 venv
 
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
 # Generated gifs
 *.gif
 

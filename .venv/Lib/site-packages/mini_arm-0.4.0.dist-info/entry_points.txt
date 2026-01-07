@@ -1,0 +1,2 @@
+[console_scripts]
+mini-arm = miniarm_core.__main__:main

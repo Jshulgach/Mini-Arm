@@ -1,0 +1,8 @@
+# Documentation requirements
+sphinx>=7,<9
+furo
+sphinx-autodoc-typehints
+sphinx-copybutton
+sphinx-design
+m2r2
+myst-parser

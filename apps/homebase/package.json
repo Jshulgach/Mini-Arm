@@ -9,7 +9,8 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "node scripts/serve.mjs",
-    "lint": "oxlint app lib scripts tests",
+    "lint": "oxlint app lib scripts tests contracts",
+    "typecheck": "tsc --noEmit",
     "test": "node --test --test-isolation=none tests/*.test.mjs",
     "format": "oxfmt"
   },

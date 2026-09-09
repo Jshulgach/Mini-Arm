@@ -9,6 +9,7 @@ FROM node:24.20.0-bookworm-slim
 WORKDIR /app
 COPY --from=build /app/dist/client ./dist/client
 COPY scripts ./scripts
+COPY contracts ./contracts
 COPY lib/home.ts ./lib/home.ts
 RUN mkdir /app/data && chown node:node /app/data
 USER node

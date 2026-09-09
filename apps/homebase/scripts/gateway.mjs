@@ -1,4 +1,5 @@
 import { DatabaseSync } from 'node:sqlite';
+import { parseAssistantReply, parseForecast } from '../contracts/validate-assistant.ts';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { connect } from 'node:net';
@@ -182,8 +183,8 @@ export async function handleGateway(req,res,gateway,assistant=null) {
     }
     let result;
     if(req.method==='GET'&&route==='/api/assistant'&&assistant)result=assistant.status();
-    else if(req.method==='POST'&&route==='/api/assistant'&&assistant)result=await assistant.ask(body,gateway.snapshot());
-    else if(req.method==='POST'&&route==='/api/weather'&&assistant)result=await assistant.forecast(body.units);
+    else if(req.method==='POST'&&route==='/api/assistant'&&assistant)result=parseAssistantReply(await assistant.ask(body,gateway.snapshot()));
+    else if(req.method==='POST'&&route==='/api/weather'&&assistant)result=parseForecast(await assistant.forecast(body.units));
     else if(req.method==='GET'&&route==='/api/home')result=gateway.snapshot();
     else if(req.method==='PUT'&&route==='/api/home')result=gateway.save(body);
     else if(req.method==='GET'&&route==='/api/export')result=gateway.export();

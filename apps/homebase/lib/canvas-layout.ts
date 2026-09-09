@@ -1,12 +1,5 @@
-export const widgetIds = [
-  'chat',
-  'weather',
-  'home',
-  'activity',
-  'webcam',
-  'gripper',
-] as const;
-export type WidgetId = (typeof widgetIds)[number];
+import { widgetIds, type WidgetId } from '../contracts/widgets.ts';
+export { widgetIds, type WidgetId } from '../contracts/widgets.ts';
 export type WidgetLayout = {
   id: WidgetId;
   width: 3 | 6 | 12;

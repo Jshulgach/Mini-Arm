@@ -1,0 +1,16 @@
+name: homebase
+services:
+  dashboard:
+    build: .
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - homebase-data:/app/data
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  homebase-data:

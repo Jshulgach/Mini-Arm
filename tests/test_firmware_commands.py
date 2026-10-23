@@ -20,6 +20,13 @@ from arm_utils.armTransforms import Angle
 from miniarm_core.client import MiniArmClient
 
 
+def test_scalar_euler_conversion_does_not_require_numpy_2_aliases(monkeypatch):
+    from arm_utils import armTransforms
+    monkeypatch.delattr(armTransforms.np, 'asin', raising=False)
+    result = armTransforms.rotationMatrixToEulerAngles(armTransforms.np.eye(3))
+    assert [angle.rad for angle in result] == [0, 0, 0]
+
+
 @pytest.fixture
 def arm():
     robot = RobotArm(simulate_hardware=True, dh_params=miniarm_params)

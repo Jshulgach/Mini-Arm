@@ -1,4 +1,6 @@
 
+import math
+
 try:
     import ulab.numpy as np  # CircuitPython
 except ImportError:
@@ -270,7 +272,7 @@ def rotationMatrixToEulerAngles(R):
         (list[Angle]): The three euler angles obtained from the rotation matrix
     """
     if (R[2, 0] != 1 and R[2, 0] != -1):
-        B1 = -np.asin(R[2, 0])
+        B1 = -math.asin(float(R[2, 0]))
         B2 = np.pi + B1
         A1 = np.arctan2(R[2, 1] / np.cos(B1), R[2, 2] / np.cos(B1))
         A2 = np.arctan2(R[2, 1] / np.cos(B2), R[2, 2] / np.cos(B2))

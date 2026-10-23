@@ -1,6 +1,8 @@
 
-#import ulab.numpy as np
-import numpy as np
+try:
+    import ulab.numpy as np  # CircuitPython
+except ImportError:
+    import numpy as np      # Desktop model tests
 
 # Matrix mathematics dont seem to be as accurate as the symbolic math or numpy operations
 # on the PC. Small numbers are found in matrices instead of 0, which could be causing jumping
@@ -653,4 +655,3 @@ def rotMatToEul(matrix, order='xyz'):
 
 
     return [Angle(float(theta1), "rad"), Angle(float(theta2), "rad"), Angle(float(theta3), "rad")]
-    

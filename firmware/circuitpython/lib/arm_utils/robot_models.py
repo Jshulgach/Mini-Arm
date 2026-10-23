@@ -1,5 +1,7 @@
-#import ulab.numpy as np
-import numpy as np
+try:
+    import ulab.numpy as np
+except ImportError:
+    import numpy as np
 
 # Collection of robot models using different parameters. 
 # 

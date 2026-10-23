@@ -1,5 +1,7 @@
 # Mini-Arm ROS2 packages
 
+The repaired model has a mock-only launch: `ros2 launch miniarm_moveit_config mock.launch.py rviz:=true`. See [the repair and validation notes](../docs/smart-home/miniarm-repair.md) before physical bring-up. No hardware plugin is selected by this launch.
+
 This folder contains several RPS2 packages for using the arm in ROS2. Package building using `colcon` is recommended.
 
 - Clone the Mini-Arm repo into your ROS2 workspace if you haven't done so:

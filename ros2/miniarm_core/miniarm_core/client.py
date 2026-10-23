@@ -4,7 +4,11 @@ Mini-Arm Client
 Serial communication interface for the Mini-Arm robot.
 """
 
+import math
+import re
+import threading
 import time
+import uuid
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
@@ -86,6 +90,13 @@ class MiniArmClient:
         self.command_delimiter = command_delimiter
         self.timeout = timeout
         self.verbose = verbose
+        if not math.isfinite(timeout) or timeout <= 0:
+            raise ValueError("timeout must be positive and finite")
+        if command_delimiter != ";":
+            raise ValueError(
+                "Acknowledged firmware protocol requires semicolon framing"
+            )
+        self._io_lock = threading.RLock()
 
         # Internal state
         self.s: Optional[serial.Serial] = None
@@ -100,14 +111,16 @@ class MiniArmClient:
         """Establish serial connection to Mini-Arm."""
         try:
             self.s = serial.Serial(
-                port=self.port, baudrate=self.baudrate, timeout=self.timeout
+                port=self.port,
+                baudrate=self.baudrate,
+                timeout=min(0.01, self.timeout),
+                write_timeout=self.timeout,
             )
             self.connected = self.s.is_open
 
             if self.connected:
                 # Clear any startup messages
-                time.sleep(0.5)
-                self.get_buffer()
+                self.s.reset_input_buffer()
                 self.logger(f"Connected to {self.port} at {self.baudrate} baud")
 
         except serial.SerialException as e:
@@ -134,92 +147,91 @@ class MiniArmClient:
     # Core Communication Methods
     # =========================================================================
 
-    def send_message(self, message: str) -> None:
-        """Send a message to the Pico over serial.
+    def send_message(self, message: str) -> Optional[str]:
+        """Wait for a matching processing fence (firmware 1.4.10+).
 
-        Automatically adds the command terminator if not present.
-
-        Parameters
-        ----------
-        message : str
-            The command message to send.
+        A fence means the handler returned, not physical motion completion.
+        Never automatically retry a motion command after a timeout.
         """
+        command = message[:-1] if message.endswith(";") else message
+        if (
+            not command
+            or ";" in command
+            or any(ord(c) < 32 or ord(c) > 126 for c in command)
+        ):
+            raise ValueError("Send one printable ASCII command at a time")
+        if len(command) > 512 or command.split(":", 1)[0] == "sync":
+            raise ValueError("Invalid or reserved command")
         if not self.s or not self.s.is_open:
-            self.logger("Serial connection not available", warning=True)
-            return
-
-        if not message.endswith(self.command_delimiter):
-            message += self.command_delimiter
-
-        try:
-            self.s.write(message.encode())
-            if self.verbose:
-                self.logger(f"TX: {message.strip()}")
-            time.sleep(0.01)  # 10ms delay to prevent buffer overflow
-        except serial.SerialException as e:
-            self.logger(f"Error sending: {e}", warning=True)
+            raise ConnectionError("Serial connection not available")
+        with self._io_lock:
+            token = uuid.uuid4().hex
+            start = "@sync:" + token + "-b"
+            end = "@sync:" + token + "-e"
+            payload = (
+                "sync:" + token + "-b;" + command + ";sync:" + token + "-e;"
+            ).encode("ascii")
+            deadline = time.monotonic() + self.timeout
+            self.s.write(payload)
+            pending = bytearray()
+            lines = []
+            started = False
+            size = 0
+            while time.monotonic() < deadline:
+                chunk = self.s.read(min(max(self.s.in_waiting, 1), 4096))
+                pending.extend(chunk)
+                size += len(chunk)
+                if size > 32768:
+                    raise RuntimeError("Serial response exceeded 32 KiB")
+                while b"\n" in pending:
+                    raw, _, rest = pending.partition(b"\n")
+                    pending = bytearray(rest)
+                    line = raw.decode("utf-8", "replace").strip("\r")
+                    # CircuitPython console title updates can prefix a reply.
+                    line = re.sub(r"\x1b\].*?(?:\x07|\x1b\\)", "", line)
+                    line = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", line)
+                    if line == start:
+                        started = True
+                        lines = []
+                    elif line == end and started:
+                        response = "\n".join(lines).strip()
+                        if (
+                            "Unknown error" in response
+                            or "Unknown command received" in response
+                            or "ERROR " in response
+                        ):
+                            raise RuntimeError(response)
+                        return response or None
+                    elif started:
+                        lines.append(line)
+            raise TimeoutError(
+                "No matching reply fence; execution status unknown. Do not automatically retry motion."
+            )
 
     def send(self, command: str) -> Optional[str]:
-        """Send a command and optionally read the response.
-
-        Parameters
-        ----------
-        command : str
-            Command string to send to Mini-Arm.
-
-        Returns
-        -------
-        str or None
-            Response from the device, if any.
-        """
-        self.send_message(command)
-        time.sleep(0.05)
-        return self.get_buffer()
+        """Execute one acknowledged exchange with no fixed post-send delay."""
+        return self.send_message(command)
 
     def get_buffer(self) -> Optional[str]:
-        """Read all available bytes from the serial connection.
-
-        Returns
-        -------
-        str or None
-            The buffer contents as a string, or None if no data available.
-        """
+        """Read currently available unsolicited output without a quiet-time wait."""
         if not self.s or not self.s.is_open:
             return None
-
-        try:
-            if self.s.in_waiting > 0:
-                msg = ""
-                while self.s.in_waiting > 0:
-                    msg += self.s.readline().decode(errors="ignore")
-                    time.sleep(0.01)
-                if self.verbose and msg:
-                    self.logger(f"RX: {msg.strip()}")
-                return msg.strip() if msg else None
-        except serial.SerialException as e:
-            self.logger(f"Error reading: {e}", warning=True)
-        return None
+        with self._io_lock:
+            data = self.s.read(self.s.in_waiting) if self.s.in_waiting else b""
+        return data.decode("utf-8", "replace").strip() or None
 
     def wait_for_response(self, timeout: float = 2.0) -> Optional[str]:
-        """Wait for a response from the device.
-
-        Parameters
-        ----------
-        timeout : float
-            Maximum time to wait in seconds.
-
-        Returns
-        -------
-        str or None
-            Response string or None if timeout.
-        """
-        start = time.time()
-        while time.time() - start < timeout:
-            response = self.get_buffer()
-            if response:
-                return response
-            time.sleep(0.05)
-        return None
+        """Read an unsolicited line; queries use send() for complete responses."""
+        if not self.s or not self.s.is_open:
+            return None
+        with self._io_lock:
+            previous = self.s.timeout
+            try:
+                self.s.timeout = timeout
+                data = self.s.read_until(b"\n")
+                return data.decode("utf-8", "replace").strip() or None
+            finally:
+                self.s.timeout = previous
 
     # =========================================================================
     # Motion Commands
@@ -261,6 +273,22 @@ class MiniArmClient:
         yaw : float, optional
             Yaw angle in radians. Default is 0.0.
         """
+        values = (x, y, z, roll, pitch, yaw)
+        if any(
+            isinstance(v, bool)
+            or not isinstance(v, (int, float))
+            or not math.isfinite(v)
+            for v in values
+        ):
+            raise ValueError("Pose values must be finite numbers")
+        for axis, value in zip(("x", "y", "z"), (x, y, z)):
+            lower, upper = self.WORKSPACE_LIMITS[axis]
+            if not lower <= value <= upper:
+                raise ValueError(
+                    f"{axis} is outside the configured workspace [{lower}, {upper}]"
+                )
+        # Public API uses radians; CircuitPython's wire protocol uses degrees.
+        roll, pitch, yaw = (math.degrees(v) for v in (roll, pitch, yaw))
         pose_str = f"[{x},{y},{z},{roll},{pitch},{yaw}]"
         self.send_message(f"set_pose:{pose_str}")
         if self.verbose:
@@ -309,6 +337,15 @@ class MiniArmClient:
         dyaw : float, optional
             Delta yaw in radians.
         """
+        values = (dx, dy, dz, droll, dpitch, dyaw)
+        if any(
+            isinstance(v, bool)
+            or not isinstance(v, (int, float))
+            or not math.isfinite(v)
+            for v in values
+        ):
+            raise ValueError("Delta values must be finite numbers")
+        droll, dpitch, dyaw = (math.degrees(v) for v in (droll, dpitch, dyaw))
         delta_str = f"[{dx},{dy},{dz},{droll},{dpitch},{dyaw}]"
         self.send_message(f"set_delta_pose:{delta_str}")
         if self.verbose:
@@ -322,9 +359,7 @@ class MiniArmClient:
         np.ndarray or None
             Array [x, y, z, roll, pitch, yaw] or None if reading fails.
         """
-        self.send_message("get_pose")
-        time.sleep(0.1)
-        data = self.get_buffer()
+        data = self.send("get_pose")
 
         if data:
             try:
@@ -359,10 +394,24 @@ class MiniArmClient:
         Parameters
         ----------
         joint_index : int
-            Joint index (0-5 for arm joints, 6 for gripper).
+            Joint index (0-5 for arm joints). Use set_gripper for the hand.
         angle : float
             Target angle in degrees.
         """
+        if (
+            isinstance(joint_index, bool)
+            or not isinstance(joint_index, int)
+            or not 0 <= joint_index < 6
+        ):
+            raise ValueError(
+                "Arm joint index must be 0-5; use set_gripper for the hand"
+            )
+        if (
+            isinstance(angle, bool)
+            or not isinstance(angle, (int, float))
+            or not math.isfinite(angle)
+        ):
+            raise ValueError("Joint angle must be a finite number")
         self.send_message(f"movemotor:{joint_index}:{angle}")
         if self.verbose:
             self.logger(f"Joint {joint_index} -> {angle}°")
@@ -376,6 +425,17 @@ class MiniArmClient:
             Joint angles in degrees [j0, j1, j2, j3, j4, j5] or
             [j0, j1, j2, j3, j4, j5, gripper].
         """
+        if len(angles) not in (6, 7) or any(
+            isinstance(v, bool)
+            or not isinstance(v, (int, float))
+            or not math.isfinite(v)
+            for v in angles
+        ):
+            raise ValueError(
+                "Expected six finite joint angles and optional gripper angle"
+            )
+        if len(angles) == 7 and not 0 <= angles[6] <= 180:
+            raise ValueError("Gripper angle must be between 0 and 180 degrees")
         angles_str = ",".join(str(a) for a in angles)
         self.send_message(f"movemotors:[{angles_str}]")
         if self.verbose:
@@ -389,15 +449,18 @@ class MiniArmClient:
         list of float or None
             Joint angles in degrees, or None if reading fails.
         """
-        self.send_message("get_joints")
-        time.sleep(0.1)
-        data = self.get_buffer()
+        data = self.send("get_joints")
 
         if data:
             try:
                 # Parse joint values from response
-                data = data.replace("[", "").replace("]", "")
-                joints = [float(j.strip()) for j in data.split(",") if j.strip()]
+                matches = re.findall(r"\[([0-9eE+., \-]+)\]", data)
+                values = next(value for value in reversed(matches) if "," in value)
+                joints = [float(j.strip()) for j in values.split(",")]
+                if len(joints) not in (6, 7) or not all(
+                    math.isfinite(j) for j in joints
+                ):
+                    raise ValueError("Invalid joint response")
                 if joints:
                     self._last_joints = joints
                     return joints
@@ -506,9 +569,7 @@ class MiniArmClient:
         str or None
             Robot info string.
         """
-        self.send_message("info")
-        time.sleep(0.2)
-        info = self.get_buffer()
+        info = self.send("info")
         if info:
             print(info)
         return info
@@ -521,9 +582,7 @@ class MiniArmClient:
         str or None
             Help text with available commands.
         """
-        self.send_message("help")
-        time.sleep(0.3)
-        help_text = self.get_buffer()
+        help_text = self.send("help")
         if help_text:
             print(help_text)
         return help_text
@@ -583,9 +642,7 @@ class MiniArmClient:
         str or None
             FSR sensor values.
         """
-        self.send_message("fsr")
-        time.sleep(0.1)
-        return self.get_buffer()
+        return self.send("fsr")
 
     # =========================================================================
     # Xbox Controller Support

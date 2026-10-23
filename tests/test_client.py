@@ -4,6 +4,28 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 
 
+def mock_port():
+    port = MagicMock()
+    port.is_open = True
+    port.in_waiting = 0
+    port.timeout = .01
+    buffer = bytearray()
+    def write(data):
+        for frame in data.decode().split(';'):
+            if frame.startswith('sync:'):
+                buffer.extend(('@' + frame + '\r\n').encode())
+        port.in_waiting = len(buffer)
+        return len(data)
+    def read(size):
+        result = bytes(buffer[:size])
+        del buffer[:size]
+        port.in_waiting = len(buffer)
+        return result
+    port.write.side_effect = write
+    port.read.side_effect = read
+    return port
+
+
 class TestMiniArmImports:
     """Test that package imports work correctly."""
     
@@ -32,7 +54,7 @@ class TestMiniArmClient:
     @patch('miniarm_core.client.serial.Serial')
     def test_client_creation(self, mock_serial):
         """Test creating a client with mocked serial."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -46,7 +68,7 @@ class TestMiniArmClient:
     @patch('miniarm_core.client.serial.Serial')
     def test_client_send_message(self, mock_serial):
         """Test sending a message."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -60,7 +82,7 @@ class TestMiniArmClient:
     @patch('miniarm_core.client.serial.Serial')
     def test_client_context_manager(self, mock_serial):
         """Test using client as context manager."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -75,7 +97,7 @@ class TestMiniArmClient:
     @patch('miniarm_core.client.serial.Serial')
     def test_home_command(self, mock_serial):
         """Test home command."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -96,7 +118,7 @@ class TestMotionCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_set_pose(self, mock_serial):
         """Test set_pose method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -112,7 +134,7 @@ class TestMotionCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_set_delta_pose(self, mock_serial):
         """Test set_delta_pose method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -128,7 +150,7 @@ class TestMotionCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_set_joints(self, mock_serial):
         """Test set_joints method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -148,7 +170,7 @@ class TestGripperCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_set_gripper(self, mock_serial):
         """Test set_gripper method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -164,7 +186,7 @@ class TestGripperCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_gripper_open_close(self, mock_serial):
         """Test gripper_open and gripper_close methods."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -186,7 +208,7 @@ class TestLEDCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_set_led(self, mock_serial):
         """Test set_led method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -202,7 +224,7 @@ class TestLEDCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_led_colors(self, mock_serial):
         """Test LED color convenience methods."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -226,7 +248,7 @@ class TestTrajectoryCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_start_trajectory(self, mock_serial):
         """Test start_trajectory method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -242,7 +264,7 @@ class TestTrajectoryCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_stop_trajectory(self, mock_serial):
         """Test stop_trajectory method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -262,7 +284,7 @@ class TestSystemCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_set_debug(self, mock_serial):
         """Test set_debug method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance
@@ -280,7 +302,7 @@ class TestSystemCommands:
     @patch('miniarm_core.client.serial.Serial')
     def test_set_rate(self, mock_serial):
         """Test set_rate method."""
-        mock_serial_instance = MagicMock()
+        mock_serial_instance = mock_port()
         mock_serial_instance.is_open = True
         mock_serial_instance.in_waiting = 0
         mock_serial.return_value = mock_serial_instance

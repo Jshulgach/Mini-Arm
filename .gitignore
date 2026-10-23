@@ -2,6 +2,9 @@
 *.log
 .idea
 __pycache__
+.codex-remote-attachments/
+.pytest_cache/
+.ruff_cache/
 
 # Virtual environments
 venv/

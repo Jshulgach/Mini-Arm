@@ -41,65 +41,56 @@ class USBSerialReader(object):
         self.argument_delimiter = ARGUMENT_DELIMITER
         self.verbose = verbose
         self.connected = False
+        self._pending = b''
+        self._discard = False
+        if len(self.terminator) != 1:
+            raise ValueError("Use a single-byte command terminator")
     
     @property
     def out_data(self):
-        data = []
-        
-        # Decode the bytes currently stored in the buffer
-        temp = self._out_data.decode("utf-8")
-        
-        # If a newline,return, or backspace character exists anywhere, those are not being parsed so we will remove them
-        temp  = temp.replace('\n','').replace('\r','').replace('\b','')
-        
-        # Check if multiple commands were sent by splitting the message by the command delimiter
-        cmds = temp.split(self.command_delimiter)
-        
-        for cmd in cmds:
-            #data = cmd.split(self.argument_delimiter, 1)
-            cmd_msg = cmd.split(self.argument_delimiter) # Want all possible arguments, not just the first
-
-            if cmd_msg[-1] == '': del cmd_msg[-1] # Remove last element in arrray if empty            
-            data.append(cmd_msg)
-                    
+        raw = self._out_data
         self._out_data = None
-        return data
-        
+        if not raw:
+            return []
+        try:
+            text = raw.decode('ascii')
+        except UnicodeError:
+            self.logger('ERROR invalid command encoding')
+            return []
+        return [part.split(self.argument_delimiter) for part in text.split(self.command_delimiter) if part]
+
     def logger(self, *argv):
-        msg = ''.join(argv)
-        print("[{:.3f}][{}] {}".format(time.monotonic(), self.name, msg))
+        print('[{:.3f}][{}] {}'.format(time.monotonic(), self.name, ''.join(argv)))
 
     def update(self):
-        """ When this function runs, it checks whether any bytes are waiting in the USB CDC buffer, and fills in 
-            either the in_data or out_data buffer if the terminal byte is read.
+        """Read a bounded chunk; deliver one complete frame per scheduler turn.
+
+        Oversized frames are discarded through their terminator, never executed
+        as a truncated command. Bytes after a delimiter remain for the next turn.
         """
-        if hasattr(self.serial, 'connected'):
-            self.connected = self.serial.connected
-                
-        if self.serial.in_waiting > 0:
-            if not self.connected: 
-                self.connected = True
-            
-            while True:
-                byte = self.serial.read(1)
-                if byte:
-                    if len(self.in_data) == 0 and byte == b'\r':
-                        continue  # Skip adding the '\r' if it's the first character
-                    if byte == self.terminator:
-                        if self.verbose: 
-                            self.logger("Terminator byte read. Sending {}".format(self.in_data))
-                        self._out_data = self.in_data
-                        self.in_data = bytearray()
-                        break
-                    else:
-                        if byte.decode("utf-8") != '\n':
-                            self.in_data += byte
-                            if self.verbose: 
-                                self.logger("New byte read. Buffer contents: {}".format(self.in_data.decode("utf-8")))
-                else:
-                    break
-        
+        self.connected = getattr(self.serial, 'connected', True)
+        if self._out_data is not None:
+            return
+        if not self._pending and self.serial.in_waiting:
+            self._pending = self.serial.read(min(self.serial.in_waiting, 256)) or b''
+        if not self._pending:
+            return
+        index = self._pending.find(self.terminator)
+        chunk = self._pending if index < 0 else self._pending[:index]
+        self._pending = b'' if index < 0 else self._pending[index + 1:]
+        chunk = chunk.replace(b'\r', b'').replace(b'\n', b'')
+        if not self._discard:
+            if len(self.in_data) + len(chunk) > 512:
+                self.in_data = bytearray()
+                self._discard = True
+                self.logger('ERROR command exceeds 512 bytes')
+            else:
+                self.in_data.extend(chunk)
+        if index >= 0:
+            if not self._discard and self.in_data:
+                self._out_data = self.in_data
+            self.in_data = bytearray()
+            self._discard = False
+
     def send(self, msg):
-        """ Send a message to the connected serial device
-        """
-        self.serial.write(msg.encode("utf-8"))
+        self.serial.write(msg.encode('utf-8'))

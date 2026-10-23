@@ -1,51 +1,26 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-
-    <xacro:macro name="miniarm_ros2_control" params="name initial_positions_file">
-        <xacro:property name="initial_positions" value="${load_yaml(initial_positions_file)['initial_positions']}"/>
-
-        <ros2_control name="${name}" type="system">
-            <hardware>
-                <plugin>fake_components/GenericSystem</plugin>
-            </hardware>
-            <joint name="miniarm_joint1">
-                <param name="initial_position">${initial_positions['miniarm_joint1']}</param>
-                <command_interface name="position" />
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-            <joint name="miniarm_joint2">
-                <param name="initial_position">${initial_positions['miniarm_joint2']}</param>
-                <command_interface name="position" />
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-            <joint name="miniarm_joint3">
-                <param name="initial_position">${initial_positions['miniarm_joint3']}</param>
-                <command_interface name="position" />
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-            <joint name="miniarm_joint4">
-                <param name="initial_position">${initial_positions['miniarm_joint4']}</param>
-                <command_interface name="position" />
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-            <joint name="miniarm_joint5">
-                <param name="initial_position">${initial_positions['miniarm_joint5']}</param>
-                <command_interface name="position" />
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-            <joint name="miniarm_joint6">
-                <param name="initial_position">${initial_positions['miniarm_joint6']}</param>
-                <command_interface name="position" />
-                <state_interface name="position"/>
-                <state_interface name="velocity"/>
-            </joint>
-        </ros2_control>
-
-    </xacro:macro>
-
+  <xacro:macro name="miniarm_mock_joint" params="joint_name initial_positions">
+    <joint name="${joint_name}">
+      <command_interface name="position"/>
+      <state_interface name="position">
+        <param name="initial_value">${initial_positions[joint_name]}</param>
+      </state_interface>
+      <state_interface name="velocity"/>
+    </joint>
+  </xacro:macro>
+  <xacro:macro name="miniarm_ros2_control" params="name initial_positions_file">
+    <xacro:property name="initial_positions" value="${xacro.load_yaml(initial_positions_file)['initial_positions']}"/>
+    <!-- Intentionally no serial/network plugin or hardware-selection argument. -->
+    <ros2_control name="${name}" type="system">
+      <hardware><plugin>mock_components/GenericSystem</plugin></hardware>
+      <xacro:miniarm_mock_joint joint_name="miniarm_joint1" initial_positions="${initial_positions}"/>
+      <xacro:miniarm_mock_joint joint_name="miniarm_joint2" initial_positions="${initial_positions}"/>
+      <xacro:miniarm_mock_joint joint_name="miniarm_joint3" initial_positions="${initial_positions}"/>
+      <xacro:miniarm_mock_joint joint_name="miniarm_joint4" initial_positions="${initial_positions}"/>
+      <xacro:miniarm_mock_joint joint_name="miniarm_joint5" initial_positions="${initial_positions}"/>
+      <xacro:miniarm_mock_joint joint_name="miniarm_gripper_link_joint" initial_positions="${initial_positions}"/>
+      <xacro:miniarm_mock_joint joint_name="miniarm_gripper_joint" initial_positions="${initial_positions}"/>
+    </ros2_control>
+  </xacro:macro>
 </robot>

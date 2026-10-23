@@ -25,7 +25,7 @@ miniarm_controller:
       - miniarm_joint3
       - miniarm_joint4
       - miniarm_joint5
-      - miniarm_joint6
+      - miniarm_gripper_link_joint
 
 miniarm_hand_controller:
   ros__parameters:

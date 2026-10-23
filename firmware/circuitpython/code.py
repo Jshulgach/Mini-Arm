@@ -35,15 +35,14 @@
       Blog with Asyncio library help: https://leimao.github.io/blog/Python-AsyncIO-Asynchronous-IO/#Asynchronous-Read
 """
 
+import supervisor
+# Keep terminal-title updates out of the machine-readable USB stream.
+supervisor.status_bar.console = False
+
 from arm_control.async_controller import AsyncController as MiniArm
 
-# Before creating the MiniArm object, we can set up some RP2040 properties
-# We will change the default processor speed from 125MHz to 200MHz (Overclock)
-# Note: This is only possible with versions of CircuitPython over 8.1.0
-import microcontroller
-microcontroller.cpu.frequency = 200000000  # 200MHz
+# Keep the board default CPU clock, matching the connected Pico 2 W.
 
-        
 if __name__ == "__main__":
     """ The RPI2040 processor ir pretty fast, but when combining analytical computations as well as string buffer 
     allocations, The method if receiving input commands will determine the robot controller update rate. 
@@ -53,10 +52,13 @@ if __name__ == "__main__":
                       use_serial=True,
                       baudrate=115200,
                       speed_control=False,
-                      command_delimiter='\n', # ENTER key
+                      command_delimiter=';', # Match MiniArmClient and documented protocol
+                      home_on_start=False,   # Explicit home command only; no motion requested at boot
                       verbose=False,
                       )
     try:
         miniarm.start()
-    except KeyboardInterrupt:    
+    except KeyboardInterrupt:
+        pass
+    finally:
         miniarm.stop()

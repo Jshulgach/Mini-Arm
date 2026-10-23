@@ -5,6 +5,9 @@
 <!-- =================================================================================== -->
 <robot name="miniarm" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
+  <!-- CAD meshes are exported in millimeters. URDF origins are in meters.
+       Mesh origins and joint axes still require physical calibration. -->
+
   <!-- Custom robot colors -->
   <material name="grey">
     <color rgba="0.8 0.8 0.8 1.0"/>
@@ -19,13 +22,13 @@
   <link name="miniarm_electronics">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/electronics_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/electronics_deck.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/electronics_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/electronics_deck.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -34,15 +37,15 @@
   <link name="miniarm_base">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/base_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/Base.STL" scale="0.001 0.001 0.001" />
       </geometry>
-      <material name="">
+      <material name="base-grey">
         <color rgba="0.8 0.8 0.8 1.0"/>
       </material>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/base_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/Base.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -57,13 +60,13 @@
   <link name="miniarm_link1">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_1.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_1.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="sky-blue"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_1.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_1.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -80,13 +83,13 @@
   <link name="miniarm_link2">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_2.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_2.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="sky-blue"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_2.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_2.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -103,13 +106,13 @@
   <link name="miniarm_link3">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_3.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_3.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="sky-blue"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_3.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_3.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -128,13 +131,13 @@
   <link name="miniarm_link4">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_4.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_4.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="sky-blue"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_4.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_4.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -151,13 +154,13 @@
   <link name="miniarm_link5">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_5.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_5.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="sky-blue"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/link_5.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_5.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -174,13 +177,13 @@
   <link name="miniarm_gripper_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_6.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="sky-blue"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/link_6.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -196,13 +199,13 @@
   <link name="miniarm_left_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -210,13 +213,13 @@
   <link name="miniarm_right_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -224,13 +227,13 @@
   <link name="miniarm_left_bottom_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -238,13 +241,13 @@
   <link name="miniarm_right_bottom_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -252,13 +255,13 @@
   <link name="miniarm_left_inner_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -266,13 +269,13 @@
   <link name="miniarm_right_inner_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -280,13 +283,13 @@
   <link name="miniarm_left_inner_bottom_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -294,13 +297,13 @@
   <link name="miniarm_right_inner_bottom_knuckle_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/knuckle_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_link.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -308,13 +311,13 @@
   <link name="miniarm_left_finger_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/finger_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_finger.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/finger_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_finger.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>
@@ -322,13 +325,13 @@
   <link name="miniarm_right_finger_link">
     <visual>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/finger_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_finger.STL" scale="0.001 0.001 0.001" />
       </geometry>
       <material name="grey"/>
     </visual>
     <collision>
       <geometry>
-        <mesh filename="package://miniarm_description/meshes/finger_link.STL" />
+        <mesh filename="package://miniarm_description/meshes/gripper_finger.STL" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
   </link>

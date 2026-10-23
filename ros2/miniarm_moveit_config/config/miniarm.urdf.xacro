@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="miniarm">
-    <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+    <xacro:arg name="initial_positions_file" default="$(find miniarm_moveit_config)/config/initial_positions.yaml" />
 
     <!-- Import miniarm urdf file -->
     <xacro:include filename="$(find miniarm_description)/urdf/miniarm.urdf" />
@@ -9,6 +9,6 @@
     <xacro:include filename="miniarm.ros2_control.xacro" />
     <!-- <xacro:include filename="miniarm_hand.ros2_control.xacro" /> -->
 
-    <xacro:miniarm_ros2_control name="MiniarmFakeSystem" initial_positions_file="$(arg initial_positions_file)"/>
+    <xacro:miniarm_ros2_control name="MiniarmMockSystem" initial_positions_file="$(arg initial_positions_file)"/>
     <!-- <xacro:miniarm_hand_ros2_control name="PandaHandFakeSystem"/> -->
 </robot>

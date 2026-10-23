@@ -1,0 +1,10 @@
+# Optional NVIDIA GPU allocation. Requires a functioning host/container runtime.
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

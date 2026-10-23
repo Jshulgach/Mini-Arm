@@ -1,0 +1,68 @@
+{
+  "schema_version": "proposal-1",
+  "purpose": "Illustrative application configuration; not an executable Home Assistant config",
+  "home": {"id": "home.main", "display_name": "Home", "timezone": "America/New_York", "geometry_uri": null, "geometry_verified": false},
+  "inference": {
+    "provider": "unconfigured",
+    "choices": ["openai", "ollama", "llama_cpp"],
+    "model": null,
+    "endpoint": null,
+    "credential_ref": null,
+    "allow_cloud_fallback": false,
+    "allow_interior_images_to_cloud": false,
+    "monthly_budget_usd": null,
+    "max_concurrent_requests": 1
+  },
+  "devices": [
+    {
+      "id": "vacuum.l70",
+      "display_name": "Eufy L70",
+      "manufacturer": "Eufy",
+      "reported_model": "L70",
+      "confirmed_model_number": null,
+      "firmware": null,
+      "room_id": null,
+      "network": {"hostname": null, "reserved_ip": null, "transport": "unverified", "cloud_dependency": "unknown"},
+      "adapter": {"candidate": "eufy_clean_home_assistant", "pinned_version": null, "credential_ref": "integration:eufy-main", "configured": false},
+      "capabilities": {
+        "read_state": "unverified",
+        "pause": "unverified",
+        "return_to_dock": "unverified",
+        "clean": "unverified",
+        "map": "unverified",
+        "metric_pose": "unverified",
+        "velocity_command": "unverified",
+        "navigate_to_pose": "unverified"
+      },
+      "control": {"enabled": false, "allowed_actions": [], "lease_required": true},
+      "observation": {"value": null, "observed_at": null, "source": null, "freshness_limit_s": null},
+      "configuration_revision": 1
+    },
+    {
+      "id": "robot.miniarm",
+      "display_name": "Mini-Arm",
+      "adapter": {"candidate": "miniarm_ros2_bridge", "configured": false, "serial_port": null, "baudrate_candidate": 115200},
+      "mount": {"parent_device": "vacuum.l70", "status": "owner_confirmation_and_measurement_required", "xyz_m": null, "rpy_rad": null, "rigid": false},
+      "calibration": {"verified": false, "joint_mapping": null, "tool_frame": null, "payload_limit_kg": null},
+      "control": {"enabled": false, "allowed_actions": [], "lease_required": true, "watchdog_validated": false, "stop_validated": false},
+      "feedback": {"joint_position_source": "commanded_or_estimated_in_inspected_code", "independent_feedback_verified": false},
+      "configuration_revision": 1
+    },
+    {
+      "id": "camera.gripper",
+      "display_name": "ESP32 gripper camera",
+      "stream": {"url": null, "protocol_candidate": "http_mjpeg", "credential_ref": null, "verified": false},
+      "mount": {"parent_device": "robot.miniarm", "parent_frame": null, "xyz_m": null, "rpy_rad": null},
+      "calibration": {"intrinsics": null, "distortion": null, "verified": false},
+      "privacy": {"cloud_frames_allowed": false, "recording_enabled": false, "retention_days": null},
+      "configuration_revision": 1
+    }
+  ],
+  "relations": [],
+  "operation_contract": {
+    "required_fields": ["task_id", "command_id", "entity_id", "capability", "arguments", "deadline", "configuration_revision"],
+    "completion_requires": ["postcondition_evidence", "observed_at", "source"],
+    "ambiguous_result": "outcome_unknown",
+    "automatic_actuator_retry": false
+  }
+}

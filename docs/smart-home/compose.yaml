@@ -1,0 +1,40 @@
+# Native Linux Docker Engine foundation; HA does not support Docker Desktop.
+# Foundation only: no robot driver or coordinator is included yet.
+# Pin the resolved image digests in .env after the first verified deployment.
+name: observable-home
+services:
+  homeassistant:
+    image: ${HA_IMAGE:-ghcr.io/home-assistant/home-assistant:2026.9.1}
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-America/New_York}
+    ports:
+      - "${HA_BIND_IP:-127.0.0.1}:8123:8123"
+    volumes:
+      - ha_config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  ollama:
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+    profiles: [local-ai]
+    restart: unless-stopped
+    environment:
+      OLLAMA_NUM_PARALLEL: "1"
+      OLLAMA_MAX_LOADED_MODELS: "1"
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  ha_config:
+  ollama_models:

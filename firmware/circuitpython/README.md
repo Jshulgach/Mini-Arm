@@ -1,5 +1,9 @@
 # Pico Setup for Mini Arm
 
+The current USB transport uses acknowledged replies (controller 1.4.10+). See [USB protocol and measurements](../../docs/smart-home/usb-protocol.md). Update the client and firmware together.
+
+The September 2026 source repair disables automatic boot homing and uses semicolon-terminated commands. The repaired Python files are installed on the connected Pico 2 W; startup clears configured PWM outputs, and status communication was verified with servo power disconnected. Physical motion remains untested. Read [the repair notes](../../docs/smart-home/miniarm-repair.md) before copying firmware or enabling motion. Cartesian angles on the wire are degrees; the Python client's public pose API accepts radians and converts them.
+
 This readme contains the main firmware, scripts, and demos for a CircuitPython-controlled microcontroller. This project uses the [Raspberry Pico](https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html) as an inexpensive option for handling kinematic calculations and hardware control. This package does NOT use any symbolic math packagaes, only numpy, which makes this scalable to microcontrollers with the same kinematic configuration!
 
 ## Raspberry Pico Setup:
@@ -14,7 +18,7 @@ on getting up and running. These instructions should work with both Pico 1 and 2
 
 ### Install the Circuitpython Libraries:
 
-1. Remove any files in the `lib` folder on the Pico and replace them with the contents of the `lib` folder in this repository.
+1. Disconnect servo power, back up the existing board files, and compare its wiring settings against the repository. Preserve the installed third-party libraries. Follow the selective five-file update described in the repair notes; do not replace the entire `lib` directory.
 2. Move the `code.py` file to the root of the Pico drive.
 3. (Optional) If you want to connect the Pico to a wireless network, edit the `settings.toml` file with your network credentials and change the `COMM_TYPE` to `NETWORK`.
 

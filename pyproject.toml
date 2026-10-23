@@ -49,6 +49,7 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "PyYAML>=6.0",
     "black>=23.0",
     "ruff>=0.1.0",
     "mypy>=1.0",
@@ -97,7 +98,6 @@ exclude = '''
     | build
     | dist
     | firmware
-    | ros2
 )/
 '''
 
@@ -130,7 +130,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_client.py"]
+python_files = ["test_client.py", "test_robot_model.py", "test_firmware_commands.py", "test_usb_protocol.py", "test_base_calibration.py", "test_sweep_calibration.py"]
 addopts = "-v --tb=short"
 filterwarnings = [
     "ignore::DeprecationWarning",

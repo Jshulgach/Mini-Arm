@@ -1,5 +1,6 @@
 
 import os
+import json
 #import wifi # Pico 2 doesn't have wifi yet
 import time
 import board
@@ -12,6 +13,7 @@ from musicplayer import MusicPlayer
 from arm_utils import robot_models
 from arm_utils.xbox_utils import *
 from arm_control.robotarm import RobotArm
+from arm_control.base_calibration import BaseCalibration
 from arm_utils.force_sensor import ForceSensor
 from arm_utils.usbserialreader import USBSerialReader
 
@@ -20,7 +22,7 @@ from arm_utils.armTransforms import create_circular_trajectory as circ_traj
 #from arm_utils.armTransforms import create_depth_trajectory as depth_traj
 
 __author__ = "Jonathan Shulgach"
-__version__ = "1.4.7"
+__version__ = "1.4.13"
 
 MAXBUF = 512
 QUEUE_BUFFER = 10        # Maximum number of commands to hold
@@ -59,6 +61,7 @@ class AsyncController(object):
                        speed_control=False,
                        command_delimiter=";",
                        verbose=False,
+                       home_on_start=False,
                        ):
         self.name = name
         self.ip = ip
@@ -88,7 +91,13 @@ class AsyncController(object):
                               verbose=self.verbose)
 
         self.robot.forward_kinematics()  # update self.config with new values.
-        self.robot.home() # Set the physical robot hardware to the "home" position
+        self.calibration = BaseCalibration(self.robot)
+        self.shoulder_calibration = BaseCalibration(self.robot, joint='shoulder')
+        self.other_calibrations = {joint: BaseCalibration(self.robot, joint=joint)
+                                   for joint in BaseCalibration.CHANNELS if joint not in ('base', 'shoulder')}
+        # Boot/reconnect must not request motion. Homing is an explicit opt-in.
+        if home_on_start:
+            self.robot.home()
         #self.robot.ikhome()
 
         # Create objects for the RGB LED, the music player, and the FRSs on the gripper
@@ -139,6 +148,8 @@ class AsyncController(object):
             depending on the command type.
         """
         while self.all_stop != True:
+            for session in self.calibration_sessions():
+                session.tick()
             # MINIARM debug commands. Uncomment below to see the FK/IK calculation checks
             #self.robot.helper_forward_kinematics([0.00000,0.00000,0.00000,0.00000,0.00000,0.00000],
             #                                     [0.1350, 0.0000, 0.2150], # pose
@@ -203,15 +214,27 @@ class AsyncController(object):
                 cmd = msg[0]
                 msg = [m.replace(';','') for m in msg] # Remove ';' from all parts of the message
 
-                if cmd == 'test':         self.logger('Testing 123')           # Simple test output
+                route = self.calibration_route(cmd)
+                if any(session.locked for session in self.calibration_sessions()) and cmd not in ('sync', 'test', 'info') and route is None:
+                    self.logger('ERROR calibration mode: legacy commands locked until power-off restart')
+                    continue
+
+                if route is not None:
+                    await self.calibration_command(msg)
+                elif cmd == 'sync':
+                    if len(msg) == 2 and 1 <= len(msg[1]) <= 48 and all(c in '0123456789abcdef-' for c in msg[1]):
+                        print('@sync:' + msg[1])
+                    else:
+                        self.logger('ERROR invalid sync token')
+                elif cmd == 'test':         self.logger('Testing 123')           # Simple test output
                 elif cmd == 'movemotor':  await self.movemotor(msg)            # single motor movement               
                 elif cmd == 'movemotors': await self.movemotors(msg)           # multiple motor movement
                 elif cmd == 'info':       self.display_robotinfo()             # Get the information of the robot
-                elif cmd == 'set_gripper':await self.set_gripper(msg)          # Set gripper to specified angle     
-                elif cmd == 'set_pose':   await self.set_pose(msg)             # Global Pose command ([x, y, z, roll, pitch, yaw])
+                elif cmd in ('set_gripper', 'gripper'): await self.set_gripper(msg)
+                elif cmd in ('set_pose', 'pose'): await self.set_pose(msg)    # meters and degrees on wire
                 elif cmd == 'get_pose':   self.robot.get_pose()                # Get the current pose of the robot
                 elif cmd == 'get_joints': await self.get_joints()              # Get the current joint state
-                elif cmd == 'set_joints': self.logger("set_joints command disabled") # Set the robot joint state
+                elif cmd == 'set_joints': await self.movemotors(msg)          # Alias for joint-space command
                  # ==== Check difference ======
                 elif cmd == 'set_delta_pose': await self.set_delta_pose(msg)   # Relative cartesian position step(in the form of [x, y, z, roll, pitch, yaw])
                 elif cmd == 'posture':    self.set_posture_delta(msg)          # Cartesian displacement from reference point ([x, y, z, roll, pitch, yaw])                
@@ -236,6 +259,87 @@ class AsyncController(object):
         #print("{}".format(1/(time.monotonic()-self.prev_t)))
         #self.update_rate = 1/(time.monotonic()-self.prev_t)
         #self.prev_t = time.monotonic()
+    def calibration_sessions(self):
+        yield self.calibration
+        yield self.shoulder_calibration
+        for session in self.other_calibrations.values():
+            yield session
+
+    def calibration_route(self, command):
+        parts = command.rsplit('_', 1)
+        if len(parts) != 2 or parts[1] not in ('probe', 'pulse', 'hold', 'release', 'sweep', 'target', 'jog', 'keep'):
+            return None
+        joint = 'base' if parts[0] == 'cal' else parts[0].replace('_', '-')
+        if joint not in BaseCalibration.CHANNELS:
+            return None
+        return joint, parts[1]
+
+    async def calibration_command(self, msg):
+        try:
+            route = self.calibration_route(msg[0])
+            if route is None:
+                raise ValueError('Unsupported calibration command')
+            joint, operation = route
+            session = self.calibration if joint == 'base' else self.shoulder_calibration if joint == 'shoulder' else self.other_calibrations[joint]
+            msg = ['cal_' + operation] + msg[1:]
+            if msg[0] in ('cal_hold', 'cal_pulse', 'cal_sweep', 'cal_jog') and any(item.fault or item.active for item in self.calibration_sessions()):
+                raise ValueError('Another test is active or a calibration fault is latched')
+            if msg[0] == 'cal_probe' and len(msg) == 1:
+                result = session.status()
+            elif msg[0] == 'cal_jog' and len(msg) == 4:
+                if self.run_traj:
+                    raise ValueError('Stop the running trajectory before calibration')
+                expected = None if msg[3] == 'none' else float(msg[3])
+                session.begin_jog(msg[1], float(msg[2]), expected)
+                result = session.status()
+            elif msg[0] == 'cal_keep' and len(msg) == 3:
+                if any(item.fault for item in self.calibration_sessions()):
+                    session.release()
+                    raise ValueError('Calibration fault is latched')
+                session.keep_sweep(msg[1], int(msg[2]))
+                result = session.status()
+            elif msg[0] == 'cal_sweep' and len(msg) == 3:
+                if self.run_traj:
+                    raise ValueError('Stop the running trajectory before calibration')
+                session.begin_sweep(msg[1], float(msg[2]))
+                result = session.status()
+            elif msg[0] == 'cal_target' and len(msg) == 4:
+                if any(item.fault for item in self.calibration_sessions()):
+                    session.release()
+                    raise ValueError('Calibration fault is latched')
+                session.update_sweep(msg[1], int(msg[2]), float(msg[3]))
+                result = session.status()
+            elif msg[0] == 'cal_hold' and len(msg) == 3:
+                if self.run_traj:
+                    raise ValueError('Stop the running trajectory before calibration')
+                session.begin_hold(msg[1], float(msg[2]))
+                # Return immediately so the serial parser can accept release.
+                result = session.status()
+            elif msg[0] == 'cal_release' and len(msg) == 2:
+                session.release_hold(msg[1])
+                result = session.status()
+                if result['fault']:
+                    raise ValueError(result['fault'])
+            elif msg[0] == 'cal_pulse' and len(msg) == 4:
+                if self.run_traj:
+                    raise ValueError('Stop the running trajectory before calibration')
+                expected = None if msg[3] == 'none' else float(msg[3])
+                session.begin(msg[1], float(msg[2]), expected)
+                # No blocking interpolation: the deadline is enforced on the Pico,
+                # even if USB closes. Reply only after the output-release attempt.
+                while session.active:
+                    session.tick()
+                    await asyncio.sleep(0)
+                result = session.status()
+                if result['fault']:
+                    raise ValueError(result['fault'])
+            else:
+                raise ValueError('Invalid calibration command')
+            result['ok'] = True
+        except Exception as error:
+            result = {'ok': False, 'error': str(error)}
+        print('@cal:' + json.dumps(result))
+
     async def get_joints(self):
         """ Function that returns the state of all the robot joints, gripper included """
         robot_joints = self.robot.get_joints()
@@ -259,7 +363,7 @@ class AsyncController(object):
         elif len(cmd) < 3:
             self.logger("'movemotor' command and motor index received, missing motor angle (ex: 90)")
         else:
-            try:    self.robot.set_joint(int(cmd[1]), int(cmd[2]))
+            try:    self.robot.set_joint(int(cmd[1]), float(cmd[2]))
             except: self.logger("Error in value being written to motor")
 
     async def start_trajectory(self, cmd):
@@ -309,6 +413,11 @@ class AsyncController(object):
             vals_str = cmd[1].replace(" ", "").replace("[", "").replace("]", "").split(",")
             try:
                 angle_list = [float(i) for i in vals_str]
+                if len(angle_list) not in (6, 7):
+                    raise ValueError('Expected six arm angles and optional gripper angle')
+                self.robot.validate_joint_targets(angle_list[:6])
+                if len(angle_list) == 7:
+                    self.robot.validate_gripper_target(angle_list[6])
                 # Manual selection of either quick set of joint positions or using the step-based speed control
                 self.robot.set_joints(angle_list[:6])
                 #self.robot.set_joints_speed_control(angle_list[:6], 240)
@@ -320,9 +429,11 @@ class AsyncController(object):
         """ Set gripper state/angle to specified position """
         if len(cmd) < 2:
             self.logger("'gripper' command received, missing value (ex: 90, 'open')") 
-        val = int(cmd[1])
-        #self.robot.set_gripper(int(cmd[1]))
-        self.robot.update_servo(9, val)
+            return
+        try:
+            self.robot.set_gripper(cmd[1])
+        except (ValueError, TypeError):
+            self.logger('Invalid gripper value; use open, close or 0-180 degrees')
         #try:
         #    self.logger("Received {}".format(cmd[1]))
         #    #self.robot.set_gripper(int(float(cmd[1]))) # convert string to float before converting to int
@@ -428,7 +539,7 @@ class AsyncController(object):
  set_gripper |  VALUE, STRING   | // Gripper command to set the state (open/close) or position
  set_pose    |  VALUES          | // Updates the end effector pose to an absolute cartesian coordinate pose. Pass a list of values (ex: [X,Y,Z] or [X,Y,Z,R,P,Y])
  get_pose    |                  | // Returns the current position and orientation of the robot end effector
- set_joints  |  (DISABLED)      | // Updates the robot joint state. Pass a list of values (ex: [0,0,0,0,0,0])
+ set_joints  |  VALUES          | // Alias for movemotors; six joint angles in degrees, optional gripper
  get_joints  |                  | // Returns the current robot joint state
  set_led     |  VALUES          | // Set the RGB LED to a specific color using 0-255 values in a 3-element list
  set_delta   |  VALUES          | // Updates the end effector pose with a delta movement relative to the robot's current pose. Pass a list of values (ex: [X,Y,Z] or [X,Y,Z,R,P,Y])
@@ -532,6 +643,8 @@ class AsyncController(object):
 
     def stop(self):
         """ Sets a flag to stop running all tasks """
+        for session in self.calibration_sessions():
+            session.release()
         self.all_stop = True
 
     async def helper_queue_msgs(self, interval):

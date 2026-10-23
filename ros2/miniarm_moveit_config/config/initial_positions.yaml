@@ -1,8 +1,9 @@
-# Default initial positions for the miniarm's ros2_control fake system
+# Mathematical zero for mock hardware only; not a physical homing command.
 initial_positions:
   miniarm_joint1: 0.0
-  miniarm_joint2: -0.785
+  miniarm_joint2: 0.0
   miniarm_joint3: 0.0
-  miniarm_joint4: -2.356
+  miniarm_joint4: 0.0
   miniarm_joint5: 0.0
-  miniarm_joint6: 1.571
+  miniarm_gripper_link_joint: 0.0
+  miniarm_gripper_joint: 0.0
